@@ -227,4 +227,124 @@ export default function SettingsScreen() {
                 Réinitialiser les données
               </Text>
               <Text style={styles.settingDescription}>
-                Supprime toutes tes sessions et statist
+                Supprime toutes tes sessions et statistiques
+              </Text>
+            </View>
+            <ChevronRight size={20} color={colors.error} />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.footer}>
+          <Text style={styles.version}>SeedTrade v1.0.0</Text>
+          <TouchableOpacity onPress={() => {}}>
+            <Text style={styles.termsLink}>Conditions d'utilisation</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  placeholder: {
+    width: 40,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 120,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: colors.text,
+    marginBottom: 12,
+    marginTop: 20,
+  },
+  settingsGroup: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  settingIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+  },
+  dangerIcon: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+  },
+  settingContent: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: colors.text,
+    marginBottom: 4,
+  },
+  dangerText: {
+    color: colors.error,
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: colors.textLight,
+  },
+  footer: {
+    marginTop: "auto",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  version: {
+    fontSize: 14,
+    color: colors.textLight,
+    marginBottom: 8,
+  },
+  termsLink: {
+    fontSize: 14,
+    color: colors.primary,
+  },
+});
