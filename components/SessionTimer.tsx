@@ -1,221 +1,290 @@
-import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, Text, View, Dimensions, Platform } from "react-native";
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming,
-  Easing,
-  interpolate,
-} from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useState, useEffect, useRef } from "react";
+import { StyleSheet, Text, View, Animated, Dimensions } from "react-native";
 import { Image } from "expo-image";
-import colors from "@/constants/colors";
+import { LinearGradient } from "expo-linear-gradient";
 import { Mission } from "@/constants/missions";
+import colors from "@/constants/colors";
 
 type SessionTimerProps = {
   duration: number; // in minutes
-  onComplete: () => void;
   mission: Mission;
+  onComplete: () => void;
+  onExit: () => void;
 };
 
 const { width, height } = Dimensions.get("window");
-const CIRCLE_SIZE = Math.min(width, height) * 0.7;
 
-export default function SessionTimer({ 
-  duration, 
-  onComplete,
-  mission,
-}: SessionTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+export default function SessionTimer({ duration, mission, onComplete, onExit }: SessionTimerProps) {
+  const [timeLeft, setTimeLeft] = useState(duration * 60); // Convert to seconds
   const [isActive, setIsActive] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const progress = useSharedValue(0);
-  
+  // Animation values
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
-    // Start the timer
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalRef.current!);
-          setIsActive(false);
-          onComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    // Animation
-    progress.value = withTiming(1, {
-      duration: duration * 60 * 1000,
-      easing: Easing.linear,
-    });
-    
-    // Cleanup
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  useEffect(() => {
+    if (isActive && timeLeft > 0) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          const newTime = prev - 1;
+          
+          // Update progress animation
+          const progress = (duration * 60 - newTime) / (duration * 60);
+          Animated.timing(progressAnim, {
+            toValue: progress,
+            duration: 100,
+            useNativeDriver: false,
+          }).start();
+          
+          if (newTime <= 0) {
+            onComplete();
+            return 0;
+          }
+          
+          return newTime;
+        });
+      }, 1000);
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, []);
-  
-  const formatTime = (seconds: number) => {
+  }, [isActive, timeLeft, duration, onComplete]);
+
+  // Pulse animation for timer
+  useEffect(() => {
+    if (isActive) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [isActive]);
+
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-  
-  const animatedWaterStyle = useAnimatedStyle(() => {
-    return {
-      height: interpolate(
-        progress.value,
-        [0, 1],
-        [CIRCLE_SIZE * 0.1, CIRCLE_SIZE * 0.9],
-      ),
-    };
-  });
-  
-  // For web compatibility
-  const WaterContainer = Platform.OS === "web" ? View : Animated.View;
-  
+
+  const getPhaseMessage = (): string => {
+    const elapsed = duration * 60 - timeLeft;
+    const progress = elapsed / (duration * 60);
+    
+    if (progress < 0.25) return "🌱 Respire profondément";
+    if (progress < 0.5) return "🧘‍♂️ Tu es dans le flow";
+    if (progress < 0.75) return "⚡ Concentration maximale";
+    return "🏆 Tu es un champion !";
+  };
+
+  const elapsedMinutes = Math.floor((duration * 60 - timeLeft) / 60);
+  const estimatedPoints = elapsedMinutes * mission.pointsPerMinute;
+
   return (
-    <View style={styles.container}>
-      <View style={styles.missionInfo}>
-        <Image
-          source={{ uri: mission.image }}
-          style={styles.missionImage}
-          contentFit="cover"
-        />
-        <Text style={styles.missionTitle}>{mission.title}</Text>
-      </View>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      {/* Background */}
+      <Image 
+        source={{ uri: mission.image }}
+        style={styles.backgroundImage}
+        contentFit="cover"
+      />
+      <LinearGradient
+        colors={[
+          'rgba(0,0,0,0.3)',
+          'rgba(0,0,0,0.6)',
+          'rgba(0,0,0,0.8)'
+        ]}
+        style={styles.overlay}
+      />
       
-      <View style={styles.circleContainer}>
-        <View style={[styles.circle, { width: CIRCLE_SIZE, height: CIRCLE_SIZE }]}>
-          <WaterContainer style={[styles.water, animatedWaterStyle]}>
-            <LinearGradient
-              colors={[colors.secondary, colors.primary]}
-              style={styles.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-          </WaterContainer>
-          <View style={styles.timeContainer}>
-            <Text style={styles.timeText}>{formatTime(timeLeft)}</Text>
-            <Text style={styles.label}>Restant</Text>
-          </View>
+      {/* Main content */}
+      <View style={styles.content}>
+        {/* Mission info */}
+        <View style={styles.missionInfo}>
+          <Text style={styles.missionTitle}>{mission.title}</Text>
+          <Text style={styles.phaseMessage}>{getPhaseMessage()}</Text>
         </View>
-      </View>
-      
-      <View style={styles.messageContainer}>
-        <Text style={styles.message}>
-          Reste loin de ton téléphone.{"\n"}
-          Chaque minute compte !
-        </Text>
         
-        <View style={styles.impactContainer}>
-          <Text style={styles.impactLabel}>Impact estimé :</Text>
-          <Text style={styles.impactValue}>
-            {(duration * mission.pointsPerMinute).toFixed(1)} points
+        {/* Timer circle */}
+        <Animated.View 
+          style={[
+            styles.timerContainer,
+            { transform: [{ scale: pulseAnim }] }
+          ]}
+        >
+          <View style={styles.timerCircle}>
+            {/* Progress ring */}
+            <Animated.View style={styles.progressRing}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    transform: [{
+                      rotate: progressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '360deg'],
+                      })
+                    }]
+                  }
+                ]}
+              />
+            </Animated.View>
+            
+            {/* Timer text */}
+            <View style={styles.timerTextContainer}>
+              <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+              <Text style={styles.timerLabel}>restantes</Text>
+            </View>
+          </View>
+        </Animated.View>
+        
+        {/* Progress info */}
+        <View style={styles.progressInfo}>
+          <Text style={styles.progressText}>
+            {elapsedMinutes} min écoulées
+          </Text>
+          <Text style={styles.pointsText}>
+            ≈ {estimatedPoints} points gagnés
+          </Text>
+        </View>
+        
+        {/* Motivational quotes */}
+        <View style={styles.motivationContainer}>
+          <Text style={styles.motivationText}>
+            "Chaque minute de calme contribue à un monde meilleur"
           </Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     backgroundColor: colors.primary,
-    padding: 20,
+  },
+  backgroundImage: {
+    position: 'absolute',
+    width: width,
+    height: height,
+  },
+  overlay: {
+    position: 'absolute',
+    width: width,
+    height: height,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
   missionInfo: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  missionImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 8,
-    borderWidth: 2,
-    borderColor: "white",
+    alignItems: 'center',
+    marginBottom: 60,
   },
   missionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  circleContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+  phaseMessage: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+  },
+  timerContainer: {
     marginBottom: 40,
   },
-  circle: {
-    borderRadius: CIRCLE_SIZE / 2,
+  timerCircle: {
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  progressRing: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+  },
+  progressFill: {
+    width: 250,
+    height: 250,
+    borderRadius: 125,
     borderWidth: 4,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: 'transparent',
+    borderTopColor: 'white',
+    borderRightColor: 'white',
   },
-  water: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 100,
-    borderTopRightRadius: 100,
-    overflow: "hidden",
+  timerTextContainer: {
+    alignItems: 'center',
   },
-  gradient: {
-    width: "100%",
-    height: "100%",
-  },
-  timeContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-  },
-  timeText: {
+  timerText: {
     fontSize: 48,
-    fontWeight: "bold",
-    color: "white",
+    fontWeight: '300',
+    color: 'white',
+    marginBottom: 8,
   },
-  label: {
+  timerLabel: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginTop: 8,
+    color: 'rgba(255,255,255,0.8)',
   },
-  messageContainer: {
-    alignItems: "center",
+  progressInfo: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
-  message: {
+  progressText: {
     fontSize: 18,
-    textAlign: "center",
-    color: "white",
-    lineHeight: 28,
-    marginBottom: 24,
+    color: 'white',
+    marginBottom: 8,
+    fontWeight: '500',
   },
-  impactContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
+  pointsText: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
   },
-  impactLabel: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginBottom: 4,
+  motivationContainer: {
+    paddingHorizontal: 32,
   },
-  impactValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
+  motivationText: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 24,
   },
 });
