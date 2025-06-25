@@ -179,9 +179,34 @@ const missions = [
   }
 ];
 
+// Types
+interface Mission {
+  id: string;
+  title: string;
+  shortDescription: string;
+  longDescription: string;
+  icon: any;
+  color: string;
+  gradient: string[];
+  pointsPerMinute: number;
+  impact: string;
+  totalContributions: number;
+  currentGoal: number;
+  participants: number;
+  image: string;
+  achievements: Achievement[];
+  facts: string[];
+}
+
+interface Achievement {
+  milestone: number;
+  reward: string;
+  unlocked: boolean;
+}
+
 export default function MissionsScreen() {
-  const [selectedMission, setSelectedMission] = useState(missions[0]);
-  const [expandedCard, setExpandedCard] = useState(null);
+  const [selectedMission, setSelectedMission] = useState<Mission>(missions[0]);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
@@ -193,7 +218,7 @@ export default function MissionsScreen() {
     }).start();
   }, []);
 
-  const handleMissionSelect = (mission) => {
+  const handleMissionSelect = (mission: Mission) => {
     if (selectedMission.id !== mission.id) {
       setSelectedMission(mission);
       Alert.alert(
@@ -206,9 +231,178 @@ export default function MissionsScreen() {
 
   const progressPercentage = (selectedMission.totalContributions / selectedMission.currentGoal) * 100;
 
-  const MissionCard = ({ mission, isSelected }) => {
+  const MissionCard = ({ mission, isSelected }: { mission: Mission; isSelected: boolean }) => {
     const IconComponent = mission.icon;
     const isExpanded = expandedCard === mission.id;
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.missionCard,
+          isSelected && styles.selectedMissionCard,
+        ]}
+        onPress={() => handleMissionSelect(mission)}
+        onLongPress={() => setExpandedCard(isExpanded ? null : mission.id)}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={isSelected ? mission.gradient : ['rgba(255,255,255,0.8)', 'rgba(255,255,255,1)']}
+          style={styles.missionCardGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          {/* Header */}
+          <View style={styles.missionHeader}>
+            <View style={[
+              styles.missionIcon, 
+              { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : mission.color }
+            ]}>
+              <IconComponent 
+                size={24} 
+                color={isSelected ? 'white' : 'white'} 
+              />
+            </View>
+            <View style={styles.missionInfo}>
+              <Text style={[
+                styles.missionTitle,
+                { color: isSelected ? 'white' : colors.text }
+              ]}>
+                {mission.title}
+              </Text>
+              <Text style={[
+                styles.missionDescription,
+                { color: isSelected ? 'rgba(255,255,255,0.9)' : colors.textSecondary }
+              ]}>
+                {mission.shortDescription}
+              </Text>
+            </View>
+            {isSelected && (
+              <CheckCircle size={24} color="white" />
+            )}
+          </View>
+
+          {/* Stats */}
+          <View style={styles.missionStats}>
+            <View style={styles.statItem}>
+              <Text style={[
+                styles.statValue,
+                { color: isSelected ? 'white' : mission.color }
+              ]}>
+                {mission.pointsPerMinute}
+              </Text>
+              <Text style={[
+                styles.statLabel,
+                { color: isSelected ? 'rgba(255,255,255,0.8)' : colors.textLight }
+              ]}>
+                pts/min
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[
+                styles.statValue,
+                { color: isSelected ? 'white' : mission.color }
+              ]}>
+                {mission.participants.toLocaleString()}
+              </Text>
+              <Text style={[
+                styles.statLabel,
+                { color: isSelected ? 'rgba(255,255,255,0.8)' : colors.textLight }
+              ]}>
+                participants
+              </Text>
+            </View>
+          </View>
+
+          {/* Progress */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressHeader}>
+              <Text style={[
+                styles.progressLabel,
+                { color: isSelected ? 'rgba(255,255,255,0.9)' : colors.textSecondary }
+              ]}>
+                Objectif: {mission.currentGoal.toLocaleString()} {mission.impact}
+              </Text>
+              <Text style={[
+                styles.progressPercent,
+                { color: isSelected ? 'white' : mission.color }
+              ]}>
+                {Math.round(progressPercentage)}%
+              </Text>
+            </View>
+            <View style={[
+              styles.progressBar,
+              { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : colors.border }
+            ]}>
+              <View 
+                style={[
+                  styles.progressFill,
+                  { 
+                    width: `${Math.min(progressPercentage, 100)}%`,
+                    backgroundColor: isSelected ? 'white' : mission.color
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+
+          {/* Expanded content */}
+          {isExpanded && (
+            <View style={styles.expandedContent}>
+              <Text style={[
+                styles.expandedDescription,
+                { color: isSelected ? 'rgba(255,255,255,0.9)' : colors.text }
+              ]}>
+                {mission.longDescription}
+              </Text>
+              
+              <View style={styles.achievementsContainer}>
+                <Text style={[
+                  styles.achievementsTitle,
+                  { color: isSelected ? 'white' : colors.text }
+                ]}>
+                  Tes badges
+                </Text>
+                <View style={styles.achievementsList}>
+                  {mission.achievements.map((achievement: Achievement, index: number) => (
+                    <View key={index} style={styles.achievementItem}>
+                      <View style={[
+                        styles.achievementBadge,
+                        { 
+                          backgroundColor: achievement.unlocked 
+                            ? (isSelected ? 'rgba(255,255,255,0.2)' : mission.color)
+                            : colors.border
+                        }
+                      ]}>
+                        <Text style={[
+                          styles.achievementNumber,
+                          { 
+                            color: achievement.unlocked 
+                              ? 'white' 
+                              : colors.textLight
+                          }
+                        ]}>
+                          {achievement.milestone}
+                        </Text>
+                      </View>
+                      <Text style={[
+                        styles.achievementText,
+                        { 
+                          color: isSelected ? 'rgba(255,255,255,0.8)' : colors.textSecondary,
+                          opacity: achievement.unlocked ? 1 : 0.6
+                        }
+                      ]}>
+                        {achievement.reward}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  };
     
     return (
       <TouchableOpacity
