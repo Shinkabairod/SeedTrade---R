@@ -1,15 +1,35 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Session, SessionStatus, UserStats } from "@/types";
-import { missions } from "@/constants/missions";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export interface Session {
+  id: string;
+  missionId: string;
+  duration: number; // in minutes
+  startTime: number;
+  endTime?: number;
+  status: 'active' | 'completed' | 'failed';
+  points: number;
+}
+
+export interface UserStats {
+  totalSessions: number;
+  totalMinutes: number;
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastSessionDate?: string;
+}
 
 interface SessionState {
-  currentSession: Session | null;
-  sessions: Session[];
+  // User data
   stats: UserStats;
+  sessions: Session[];
+  currentSession: Session | null;
   activeMissionId: string;
   hasCompletedOnboarding: boolean;
+  
+  // Actions
   startSession: (duration: number) => void;
   completeSession: () => void;
   failSession: () => void;
@@ -20,7 +40,6 @@ interface SessionState {
 
 const initialStats: UserStats = {
   totalSessions: 0,
-  completedSessions: 0,
   totalMinutes: 0,
   totalPoints: 0,
   currentStreak: 0,
@@ -30,30 +49,25 @@ const initialStats: UserStats = {
 export const useSessionStore = create<SessionState>()(
   persist(
     (set, get) => ({
-      currentSession: null,
-      sessions: [],
+      // Initial state
       stats: initialStats,
-      activeMissionId: missions[0].id,
+      sessions: [],
+      currentSession: null,
+      activeMissionId: 'reforestation',
       hasCompletedOnboarding: false,
 
+      // Actions
       startSession: (duration: number) => {
-        const session: Session = {
+        const newSession: Session = {
           id: Date.now().toString(),
           missionId: get().activeMissionId,
           duration,
           startTime: Date.now(),
-          endTime: null,
-          status: "active",
+          status: 'active',
           points: 0,
         };
-
-        set({ 
-          currentSession: session,
-          stats: {
-            ...get().stats,
-            totalSessions: get().stats.totalSessions + 1,
-          }
-        });
+        
+        set({ currentSession: newSession });
       },
 
       completeSession: () => {
@@ -61,30 +75,36 @@ export const useSessionStore = create<SessionState>()(
         
         if (!currentSession) return;
         
-        const mission = missions.find(m => m.id === currentSession.missionId);
-        if (!mission) return;
-        
-        const points = currentSession.duration * mission.pointsPerMinute;
-        
+        const points = currentSession.duration * 2; // 2 points per minute
         const completedSession: Session = {
           ...currentSession,
           endTime: Date.now(),
-          status: "completed",
+          status: 'completed',
           points,
         };
         
-        const newStreak = stats.currentStreak + 1;
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+        const lastSessionDate = stats.lastSessionDate;
+        
+        let newStreak = stats.currentStreak;
+        if (!lastSessionDate || lastSessionDate === yesterday) {
+          newStreak = stats.currentStreak + 1;
+        } else if (lastSessionDate !== today) {
+          newStreak = 1;
+        }
         
         set({
           currentSession: null,
           sessions: [completedSession, ...sessions],
           stats: {
             ...stats,
-            completedSessions: stats.completedSessions + 1,
+            totalSessions: stats.totalSessions + 1,
             totalMinutes: stats.totalMinutes + currentSession.duration,
             totalPoints: stats.totalPoints + points,
             currentStreak: newStreak,
             longestStreak: Math.max(stats.longestStreak, newStreak),
+            lastSessionDate: today,
           }
         });
       },
@@ -97,7 +117,7 @@ export const useSessionStore = create<SessionState>()(
         const failedSession: Session = {
           ...currentSession,
           endTime: Date.now(),
-          status: "failed",
+          status: 'failed',
           points: 0,
         };
         
@@ -121,17 +141,16 @@ export const useSessionStore = create<SessionState>()(
 
       resetStore: () => {
         set({
-          sessions: [],
           stats: initialStats,
+          sessions: [],
           currentSession: null,
-          // Keep the active mission and onboarding status
-          activeMissionId: get().activeMissionId,
-          hasCompletedOnboarding: true,
+          activeMissionId: 'reforestation',
+          hasCompletedOnboarding: false,
         });
       },
     }),
     {
-      name: "seedtrade-storage",
+      name: 'seedtrade-storage',
       storage: createJSONStorage(() => AsyncStorage),
     }
   )
