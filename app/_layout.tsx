@@ -1,4 +1,4 @@
-import { Stack, Slot } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
@@ -38,7 +38,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen
-          name="index"
+          name="(tabs)"
           options={{
             headerShown: false,
           }}
@@ -51,38 +51,10 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="home"
-          options={{
-            title: "SeedTrade",
-            headerLargeTitle: true,
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
           name="session"
           options={{
             headerShown: false,
             presentation: "fullScreenModal",
-          }}
-        />
-        <Stack.Screen
-          name="missions"
-          options={{
-            title: "Missions",
-            headerLargeTitle: true,
-          }}
-        />
-        <Stack.Screen
-          name="profile"
-          options={{
-            title: "Mon Impact",
-            headerLargeTitle: true,
-          }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{
-            title: "Réglages",
           }}
         />
       </Stack>

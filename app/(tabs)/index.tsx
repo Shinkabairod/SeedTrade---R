@@ -1,30 +1,13 @@
-import { StyleSheet, Text, View } from "react-native";
+import { View } from "react-native";
+import { Redirect } from "expo-router";
+import { useSessionStore } from "@/store/useSessionStore";
 
-export default function TabOneScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} />
-      <Text>
-        This is an example tab. You can edit it in app/%28tabs%29/index.tsx.
-      </Text>
-    </View>
-  );
+export default function TabIndexScreen() {
+  const { hasCompletedOnboarding } = useSessionStore();
+
+  if (!hasCompletedOnboarding) {
+    return <Redirect href="/onboarding/1" />;
+  }
+
+  return <Redirect href="/home" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: "80%",
-  },
-});

@@ -1,46 +1,121 @@
-import React from "react";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Link, Tabs } from "expo-router";
-import { Pressable } from "react-native";
+import { Tabs } from "expo-router";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { Home, Target, Trophy, User, Settings } from "lucide-react-native";
+import colors from "@/constants/colors";
 
-import Colors from "@/constants/colors";
+function TabBarIcon({ Icon, focused }: { Icon: any; focused: boolean }) {
+  return (
+    <Icon
+      size={24}
+      color={focused ? colors.primary : colors.textLight}
+      strokeWidth={focused ? 2.5 : 2}
+    />
+  );
+}
 
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>["name"];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+function SessionButton() {
+  return (
+    <View style={styles.sessionButtonContainer}>
+      <TouchableOpacity
+        style={styles.sessionButton}
+        onPress={() => {}}
+      >
+        <View style={styles.sessionButtonInner}>
+          <Target size={28} color="white" />
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.light.tint,
-        headerShown: true,
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textLight,
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Tab One",
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors.light.text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          title: "Accueil",
+          tabBarIcon: ({ focused }) => <TabBarIcon Icon={Home} focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="missions"
+        options={{
+          title: "Missions",
+          tabBarIcon: ({ focused }) => <TabBarIcon Icon={Target} focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="session"
+        options={{
+          title: "",
+          tabBarButton: () => <SessionButton />,
+        }}
+      />
+      <Tabs.Screen
+        name="rankings"
+        options={{
+          title: "Classement",
+          tabBarIcon: ({ focused }) => <TabBarIcon Icon={Trophy} focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profil",
+          tabBarIcon: ({ focused }) => <TabBarIcon Icon={User} focused={focused} />,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: colors.card,
+    borderTopColor: colors.border,
+    height: 88,
+    paddingBottom: 32,
+    paddingHorizontal: 16,
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  sessionButtonContainer: {
+    position: "absolute",
+    top: -30,
+    alignSelf: "center",
+  },
+  sessionButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  sessionButtonInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+});
