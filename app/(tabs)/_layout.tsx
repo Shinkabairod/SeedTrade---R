@@ -40,7 +40,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: "Accueil",
           tabBarIcon: ({ focused }) => <TabBarIcon Icon={Home} focused={focused} />,
@@ -80,15 +80,27 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 85,
     backgroundColor: colors.card,
-    borderTopColor: colors.border,
-    height: 88,
-    paddingBottom: 32,
-    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.06)",
+    paddingHorizontal: 10,
+    paddingBottom: 20,
+    paddingTop: 10,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   tabBarLabel: {
     fontSize: 12,
     fontWeight: "500",
+    marginTop: 4,
   },
   sessionButtonContainer: {
     position: "absolute",
