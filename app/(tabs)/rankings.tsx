@@ -157,6 +157,28 @@ const currentUser = {
   country: '🇦🇪'
 };
 
+// Types
+interface UserData {
+  id: number;
+  name: string;
+  username: string;
+  points: number;
+  sessions: number;
+  streak: number;
+  trend: 'up' | 'down' | 'stable';
+  trendValue: string;
+  level: string;
+  avatar: string;
+  mission: string;
+  country: string;
+}
+
+interface MonthlyData {
+  month: string;
+  sessions: number;
+  points: number;
+}
+
 const timeframes = [
   { id: 'week', label: 'Semaine', icon: Calendar },
   { id: 'month', label: 'Mois', icon: Target },
@@ -199,7 +221,7 @@ export default function RankingsScreen() {
     }, 1000);
   };
 
-  const getRankColor = (rank) => {
+  const getRankColor = (rank: number): string => {
     switch (rank) {
       case 1: return '#FFD700'; // Or
       case 2: return '#C0C0C0'; // Argent
@@ -208,7 +230,7 @@ export default function RankingsScreen() {
     }
   };
 
-  const getRankIcon = (rank) => {
+  const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1: return Crown;
       case 2: return Medal;
@@ -217,7 +239,7 @@ export default function RankingsScreen() {
     }
   };
 
-  const getTrendIcon = (trend) => {
+  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
       case 'up': return TrendingUp;
       case 'down': return TrendingDown;
@@ -225,7 +247,7 @@ export default function RankingsScreen() {
     }
   };
 
-  const getTrendColor = (trend) => {
+  const getTrendColor = (trend: 'up' | 'down' | 'stable'): string => {
     switch (trend) {
       case 'up': return colors.success;
       case 'down': return colors.error;
@@ -273,9 +295,83 @@ export default function RankingsScreen() {
     </View>
   );
 
-  const LeaderboardItem = ({ user, index, rank }) => {
+  const LeaderboardItem = ({ user, index, rank }: { user: UserData; index: number; rank: number }) => {
     const RankIcon = getRankIcon(rank);
     const TrendIcon = getTrendIcon(user.trend);
+    
+    return (
+      <Animated.View
+        style={[
+          styles.leaderboardItem,
+          { 
+            opacity: animatedValues[index],
+            transform: [{
+              translateY: animatedValues[index].interpolate({
+                inputRange: [0, 1],
+                outputRange: [50, 0],
+              }),
+            }],
+          },
+        ]}
+      >
+        <View style={styles.rankContainer}>
+          <View style={[
+            styles.rankBadge,
+            { backgroundColor: getRankColor(rank) },
+            rank <= 3 && styles.topRankBadge
+          ]}>
+            {RankIcon ? (
+              <RankIcon size={16} color="white" />
+            ) : (
+              <Text style={styles.rankText}>{rank}</Text>
+            )}
+          </View>
+        </View>
+
+        <Image 
+          source={{ uri: user.avatar }}
+          style={styles.userAvatar}
+          contentFit="cover"
+        />
+
+        <View style={styles.userDetails}>
+          <View style={styles.userNameRow}>
+            <Text style={styles.userName}>{user.name}</Text>
+            <Text style={styles.userCountry}>{user.country}</Text>
+          </View>
+          <Text style={styles.userUsername}>{user.username}</Text>
+          <Text style={styles.userMission}>{user.mission} • {user.level}</Text>
+        </View>
+
+        <View style={styles.userMetrics}>
+          <View style={styles.mainMetric}>
+            <Text style={styles.metricValue}>
+              {selectedCategory === 'points' ? user.points :
+               selectedCategory === 'sessions' ? user.sessions :
+               user.streak}
+            </Text>
+            <Text style={styles.metricLabel}>
+              {selectedCategory === 'points' ? 'pts' :
+               selectedCategory === 'sessions' ? 'sessions' :
+               'jours'}
+            </Text>
+          </View>
+          
+          {TrendIcon && (
+            <View style={styles.trendContainer}>
+              <TrendIcon size={16} color={getTrendColor(user.trend)} />
+              <Text style={[
+                styles.trendValue,
+                { color: getTrendColor(user.trend) }
+              ]}>
+                {user.trendValue}
+              </Text>
+            </View>
+          )}
+        </View>
+      </Animated.View>
+    );
+  };
     
     return (
       <Animated.View
