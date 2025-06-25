@@ -1,21 +1,16 @@
 import React from "react";
-import { 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, ViewStyle, TextStyle } from "react-native";
 import colors from "@/constants/colors";
+
+type ButtonSize = "small" | "medium" | "large";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost";
 
 type ButtonProps = {
   title: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "outline";
-  size?: "small" | "medium" | "large";
+  size?: ButtonSize;
+  variant?: ButtonVariant;
   disabled?: boolean;
-  loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
 };
@@ -23,93 +18,111 @@ type ButtonProps = {
 export default function Button({
   title,
   onPress,
-  variant = "primary",
   size = "medium",
+  variant = "primary",
   disabled = false,
-  loading = false,
   style,
   textStyle,
 }: ButtonProps) {
-  const buttonStyles = [
-    styles.button,
-    styles[`${variant}Button`],
-    styles[`${size}Button`],
-    disabled && styles.disabledButton,
-    style,
-  ];
+  const getButtonStyle = () => {
+    const baseStyle = [styles.button, styles[size], styles[variant]];
+    
+    if (disabled) {
+      baseStyle.push(styles.disabled);
+    }
+    
+    if (style) {
+      baseStyle.push(style);
+    }
+    
+    return baseStyle;
+  };
 
-  const textStyles = [
-    styles.text,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    disabled && styles.disabledText,
-    textStyle,
-  ];
+  const getTextStyle = () => {
+    const baseStyle = [styles.text, styles[`${variant}Text`], styles[`${size}Text`]];
+    
+    if (disabled) {
+      baseStyle.push(styles.disabledText);
+    }
+    
+    if (textStyle) {
+      baseStyle.push(textStyle);
+    }
+    
+    return baseStyle;
+  };
 
   return (
     <TouchableOpacity
-      style={buttonStyles}
+      style={getButtonStyle()}
       onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.8}
+      disabled={disabled}
+      activeOpacity={disabled ? 1 : 0.8}
     >
-      {loading ? (
-        <ActivityIndicator 
-          color={variant === "outline" ? colors.primary : "white"} 
-          size="small" 
-        />
-      ) : (
-        <Text style={textStyles}>{title}</Text>
-      )}
+      <Text style={getTextStyle()}>{title}</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
+  // Base button styles
   button: {
-    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  primaryButton: {
+  
+  // Size styles
+  small: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  medium: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  large: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 16,
+  },
+  
+  // Variant styles
+  primary: {
     backgroundColor: colors.primary,
   },
-  secondaryButton: {
+  secondary: {
     backgroundColor: colors.secondary,
   },
-  outlineButton: {
+  outline: {
     backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: colors.primary,
   },
-  smallButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  ghost: {
+    backgroundColor: "transparent",
   },
-  mediumButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  largeButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-  },
-  disabledButton: {
+  
+  // Disabled state
+  disabled: {
     backgroundColor: colors.inactive,
-    borderColor: colors.inactive,
+    shadowOpacity: 0,
+    elevation: 0,
   },
+  
+  // Text styles
   text: {
     fontWeight: "600",
+    textAlign: "center",
   },
-  primaryText: {
-    color: "white",
-  },
-  secondaryText: {
-    color: colors.text,
-  },
-  outlineText: {
-    color: colors.primary,
-  },
+  
+  // Text size styles
   smallText: {
     fontSize: 14,
   },
@@ -119,6 +132,22 @@ const styles = StyleSheet.create({
   largeText: {
     fontSize: 18,
   },
+  
+  // Text variant styles
+  primaryText: {
+    color: "white",
+  },
+  secondaryText: {
+    color: "white",
+  },
+  outlineText: {
+    color: colors.primary,
+  },
+  ghostText: {
+    color: colors.primary,
+  },
+  
+  // Disabled text
   disabledText: {
     color: colors.textLight,
   },
