@@ -15,7 +15,6 @@ export default function DurationPicker({
 }: DurationPickerProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Session Duration</Text>
       <View style={styles.optionsContainer}>
         {durations.map((duration) => (
           <TouchableOpacity
@@ -44,14 +43,7 @@ export default function DurationPicker({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 12,
-    textAlign: "center",
+    marginBottom: 16,
   },
   optionsContainer: {
     flexDirection: "row",
@@ -63,7 +55,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: colors.card,
+    backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
     minWidth: 80,

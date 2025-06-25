@@ -9,10 +9,13 @@ interface SessionState {
   sessions: Session[];
   stats: UserStats;
   activeMissionId: string;
+  hasCompletedOnboarding: boolean;
   startSession: (duration: number) => void;
   completeSession: () => void;
   failSession: () => void;
   setActiveMission: (missionId: string) => void;
+  completeOnboarding: () => void;
+  resetStore: () => void;
 }
 
 const initialStats: UserStats = {
@@ -31,6 +34,7 @@ export const useSessionStore = create<SessionState>()(
       sessions: [],
       stats: initialStats,
       activeMissionId: missions[0].id,
+      hasCompletedOnboarding: false,
 
       startSession: (duration: number) => {
         const session: Session = {
@@ -109,6 +113,21 @@ export const useSessionStore = create<SessionState>()(
 
       setActiveMission: (missionId: string) => {
         set({ activeMissionId: missionId });
+      },
+
+      completeOnboarding: () => {
+        set({ hasCompletedOnboarding: true });
+      },
+
+      resetStore: () => {
+        set({
+          sessions: [],
+          stats: initialStats,
+          currentSession: null,
+          // Keep the active mission and onboarding status
+          activeMissionId: get().activeMissionId,
+          hasCompletedOnboarding: true,
+        });
       },
     }),
     {

@@ -29,8 +29,7 @@ export default function StatsCard({ stats }: StatsCardProps) {
         />
         <StatItem 
           value={stats.currentStreak} 
-          label="Streak" 
-          suffix="days"
+          label="Jours consécutifs" 
         />
       </View>
     </View>
@@ -63,8 +62,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,

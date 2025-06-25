@@ -59,11 +59,10 @@ export default function MissionCard({ mission, isActive, onPress }: MissionCardP
 
 const styles = StyleSheet.create({
   container: {
-    width: cardWidth,
+    width: "100%",
     height: 200,
     borderRadius: 16,
     overflow: "hidden",
-    marginHorizontal: 10,
     backgroundColor: colors.card,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

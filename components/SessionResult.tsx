@@ -1,6 +1,7 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Share, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
+import { Share2 } from "lucide-react-native";
 import { Mission } from "@/constants/missions";
 import colors from "@/constants/colors";
 import Button from "./Button";
@@ -21,6 +22,16 @@ export default function SessionResult({
   const points = success ? duration * mission.pointsPerMinute : 0;
   const contribution = Math.floor(points);
   
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `J'ai contribué à ${duration} minutes de calme aujourd'hui avec SeedTrade et aidé à ${mission.title.toLowerCase()} ! #SeedTrade #ImpactPositif`,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -31,15 +42,15 @@ export default function SessionResult({
               style={styles.image}
               contentFit="cover"
             />
-            <Text style={styles.title}>Great job!</Text>
+            <Text style={styles.title}>Bravo !</Text>
             <Text style={styles.description}>
-              You stayed focused for {duration} minutes and contributed to a better world.
+              Tu es resté concentré pendant {duration} minutes et tu as contribué à un monde meilleur.
             </Text>
             
             <View style={styles.resultContainer}>
               <View style={styles.resultItem}>
                 <Text style={styles.resultValue}>{points.toFixed(1)}</Text>
-                <Text style={styles.resultLabel}>Points earned</Text>
+                <Text style={styles.resultLabel}>Points gagnés</Text>
               </View>
               
               <View style={styles.resultItem}>
@@ -51,8 +62,16 @@ export default function SessionResult({
             </View>
             
             <Text style={styles.missionText}>
-              Mission: {mission.title}
+              Mission : {mission.title}
             </Text>
+            
+            <TouchableOpacity 
+              style={styles.shareButton}
+              onPress={handleShare}
+            >
+              <Share2 size={18} color={colors.primary} />
+              <Text style={styles.shareText}>Partager</Text>
+            </TouchableOpacity>
           </>
         ) : (
           <>
@@ -61,18 +80,18 @@ export default function SessionResult({
               style={styles.image}
               contentFit="cover"
             />
-            <Text style={styles.title}>Session interrupted</Text>
+            <Text style={styles.title}>Session interrompue</Text>
             <Text style={styles.description}>
-              You left the session before it was completed. No points were earned this time.
+              Tu as quitté la session avant qu'elle ne soit terminée. Aucun point n'a été gagné cette fois-ci.
             </Text>
             <Text style={styles.encouragement}>
-              Don't worry! You can try again whenever you're ready.
+              Ne t'inquiète pas ! Tu peux réessayer quand tu seras prêt.
             </Text>
           </>
         )}
         
         <Button 
-          title="Close" 
+          title="Fermer" 
           onPress={onClose} 
           style={styles.button}
           size="large"
@@ -153,6 +172,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
     fontStyle: "italic",
+  },
+  shareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.background,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 24,
+  },
+  shareText: {
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: "500",
+    marginLeft: 8,
   },
   button: {
     width: "100%",

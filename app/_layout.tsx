@@ -40,8 +40,22 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="onboarding/[screen]"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
+        <Stack.Screen
+          name="home"
+          options={{
             title: "SeedTrade",
             headerLargeTitle: true,
+            headerShown: false,
           }}
         />
         <Stack.Screen
@@ -49,6 +63,26 @@ export default function RootLayout() {
           options={{
             headerShown: false,
             presentation: "fullScreenModal",
+          }}
+        />
+        <Stack.Screen
+          name="missions"
+          options={{
+            title: "Missions",
+            headerLargeTitle: true,
+          }}
+        />
+        <Stack.Screen
+          name="profile"
+          options={{
+            title: "Mon Impact",
+            headerLargeTitle: true,
+          }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            title: "Réglages",
           }}
         />
       </Stack>
