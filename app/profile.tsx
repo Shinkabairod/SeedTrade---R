@@ -1,614 +1,162 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Alert,
-  Share,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  Settings, 
-  Share2, 
-  Award, 
-  TrendingUp,
-  Calendar,
-  Target,
-  Star,
-  Leaf,
-  Globe,
-  Heart,
-  Zap,
-  Medal,
-  Crown,
-  ChevronRight,
-  Edit3,
-  Camera,
-  Bell,
-  Shield,
-  HelpCircle,
-  LogOut,
-  Smartphone,
-  Timer,
-  Users
-} from 'lucide-react-native';
-import colors from '@/constants/colors';
-
-// Types
-interface UserProfile {
-  name: string;
-  username: string;
-  email: string;
-  joinDate: string;
-  avatar: string;
-  level: string;
-  levelProgress: number;
-  nextLevel: string;
-  currentMission: string;
-  location: string;
-  bio: string;
-}
-
-interface UserStats {
-  totalPoints: number;
-  totalMinutes: number;
-  totalSessions: number;
-  currentStreak: number;
-  longestStreak: number;
-  averageSession: number;
-  favoriteTime: string;
-  totalImpact: {
-    trees: number;
-    water: number;
-    education: number;
-    health: number;
-  };
-}
-
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: any;
-  color: string;
-  unlocked: boolean;
-  unlockedAt?: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
-}
-
-const userProfile: UserProfile = {
-  name: 'Alex Moreau',
-  username: '@alex_zen',
-  email: 'alex.moreau@email.com',
-  joinDate: '2024-01-15',
-  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200',
-  level: 'Eco-Master',
-  levelProgress: 75,
-  nextLevel: 'Eco-Legend',
-  currentMission: 'Reforestation',
-  location: '🇫🇷 Paris, France',
-  bio: 'Passionné de méditation et d\'écologie. Chaque minute compte pour un monde meilleur ! 🌱',
-};
-
-const userStats: UserStats = {
-  totalPoints: 3247,
-  totalMinutes: 1847,
-  totalSessions: 156,
-  currentStreak: 12,
-  longestStreak: 28,
-  averageSession: 18,
-  favoriteTime: '07:30',
-  totalImpact: {
-    trees: 127,
-    water: 2840,
-    education: 45,
-    health: 23
-  }
-};
-
-const achievements: Achievement[] = [
-  {
-    id: 'first_session',
-    title: 'Premier Pas',
-    description: 'Première session terminée',
-    icon: Target,
-    color: colors.primary,
-    unlocked: true,
-    unlockedAt: '2024-01-15',
-    rarity: 'common'
-  },
-  {
-    id: 'week_streak',
-    title: 'Semaine Parfaite',
-    description: 'Session tous les jours pendant 7 jours',
-    icon: Calendar,
-    color: colors.secondary,
-    unlocked: true,
-    unlockedAt: '2024-02-03',
-    rarity: 'common'
-  },
-  {
-    id: 'hundred_points',
-    title: 'Centurion',
-    description: '100 points gagnés',
-    icon: Star,
-    color: colors.accent,
-    unlocked: true,
-    unlockedAt: '2024-02-10',
-    rarity: 'uncommon'
-  },
-  {
-    id: 'hour_session',
-    title: 'Maître du Temps',
-    description: 'Session de 60 minutes',
-    icon: Timer,
-    color: '#8B5CF6',
-    unlocked: true,
-    unlockedAt: '2024-03-15',
-    rarity: 'rare'
-  },
-  {
-    id: 'thousand_points',
-    title: 'Millionnaire',
-    description: '1000 points gagnés',
-    icon: Crown,
-    color: '#FFD700',
-    unlocked: true,
-    unlockedAt: '2024-05-20',
-    rarity: 'epic'
-  },
-  {
-    id: 'month_streak',
-    title: 'Moine Moderne',
-    description: 'Session tous les jours pendant 30 jours',
-    icon: Medal,
-    color: '#FF6B6B',
-    unlocked: false,
-    rarity: 'legendary'
-  }
-];
-
-const monthlyData = [
-  { month: 'Jan', sessions: 23, points: 487 },
-  { month: 'Fév', sessions: 28, points: 623 },
-  { month: 'Mar', sessions: 31, points: 734 },
-  { month: 'Avr', sessions: 27, points: 612 },
-  { month: 'Mai', sessions: 33, points: 823 },
-  { month: 'Juin', sessions: 14, points: 368 }
-];
+import React from "react";
+import { StyleSheet, Text, View, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
+import { Calendar, Clock, Award, Target } from "lucide-react-native";
+import { useSessionStore } from "@/store/useSessionStore";
+import { missions } from "@/constants/missions";
+import colors from "@/constants/colors";
 
 export default function ProfileScreen() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showAllAchievements, setShowAllAchievements] = useState(false);
-
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `J'ai accumulé ${userStats.totalPoints} points avec SeedTrade en aidant la planète ! 🌍\n\n${userStats.totalImpact.trees} arbres plantés 🌱\n${userStats.totalImpact.water}L d'eau fournis 💧\n\nRejoins-moi sur SeedTrade ! #SeedTrade #ImpactPositif`,
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleEditProfile = () => {
-    Alert.alert(
-      "Modifier le profil",
-      "Cette fonctionnalité sera bientôt disponible !",
-      [{ text: "OK", style: "default" }]
+  const { stats, sessions } = useSessionStore();
+  
+  // Calculate mission contributions
+  const missionContributions = missions.map(mission => {
+    const missionSessions = sessions.filter(
+      session => session.missionId === mission.id && session.status === "completed"
     );
-  };
-
-  const handleSettings = () => {
-    Alert.alert(
-      "Paramètres",
-      "Notifications, confidentialité, compte...",
-      [
-        { text: "Notifications", onPress: () => {} },
-        { text: "Confidentialité", onPress: () => {} },
-        { text: "Annuler", style: "cancel" }
-      ]
-    );
-  };
-
-  const getRarityColor = (rarity: string): string => {
-    switch (rarity) {
-      case 'common': return '#6B7280';
-      case 'uncommon': return '#10B981';
-      case 'rare': return '#3B82F6';
-      case 'epic': return '#8B5CF6';
-      case 'legendary': return '#F59E0B';
-      case 'mythic': return '#EF4444';
-      default: return colors.textLight;
-    }
-  };
-
-  const getProgressColor = (): string => {
-    if (userProfile.levelProgress > 80) return colors.success;
-    if (userProfile.levelProgress > 50) return colors.accent;
-    return colors.primary;
-  };
-
-  const ProfileHeader = () => (
-    <View style={styles.profileHeader}>
-      <LinearGradient
-        colors={[colors.primary, colors.primaryLight]}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    
+    const totalPoints = missionSessions.reduce((sum, session) => sum + session.points, 0);
+    const contribution = Math.floor(totalPoints / mission.pointsPerMinute);
+    
+    return {
+      mission,
+      sessions: missionSessions.length,
+      contribution,
+    };
+  });
+  
+  // Get recent sessions
+  const recentSessions = sessions
+    .slice(0, 5)
+    .map(session => {
+      const mission = missions.find(m => m.id === session.missionId);
+      return {
+        ...session,
+        missionTitle: mission?.title || "Mission inconnue",
+      };
+    });
+  
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Avatar et actions */}
-        <View style={styles.avatarSection}>
+        <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <Image 
-              source={{ uri: userProfile.avatar }}
-              style={styles.avatar}
-              contentFit="cover"
-            />
-            <TouchableOpacity style={styles.cameraButton}>
-              <Camera size={16} color="white" />
-            </TouchableOpacity>
+            <Text style={styles.avatarText}>T</Text>
+          </View>
+          <Text style={styles.profileName}>Ton Impact</Text>
+          <Text style={styles.profileSubtitle}>
+            Membre depuis {new Date().toLocaleDateString('fr-FR')}
+          </Text>
+        </View>
+        
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Clock size={24} color={colors.primary} />
+            </View>
+            <Text style={styles.statValue}>{stats.totalMinutes}</Text>
+            <Text style={styles.statLabel}>Minutes de calme</Text>
           </View>
           
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerButton} onPress={handleEditProfile}>
-              <Edit3 size={20} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
-              <Share2 size={20} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton} onPress={handleSettings}>
-              <Settings size={20} color="white" />
-            </TouchableOpacity>
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Calendar size={24} color={colors.secondary} />
+            </View>
+            <Text style={styles.statValue}>{stats.currentStreak}</Text>
+            <Text style={styles.statLabel}>Jours consécutifs</Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Target size={24} color={colors.accent} />
+            </View>
+            <Text style={styles.statValue}>{stats.totalSessions}</Text>
+            <Text style={styles.statLabel}>Sessions terminées</Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <View style={styles.statIconContainer}>
+              <Award size={24} color={colors.success} />
+            </View>
+            <Text style={styles.statValue}>{stats.totalPoints}</Text>
+            <Text style={styles.statLabel}>Points gagnés</Text>
           </View>
         </View>
-
-        {/* Infos utilisateur */}
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{userProfile.name}</Text>
-          <Text style={styles.userUsername}>{userProfile.username}</Text>
-          <Text style={styles.userLocation}>{userProfile.location}</Text>
-          <Text style={styles.userBio}>{userProfile.bio}</Text>
-        </View>
-
-        {/* Niveau et progression */}
-        <View style={styles.levelSection}>
-          <View style={styles.levelInfo}>
-            <Text style={styles.currentLevel}>{userProfile.level}</Text>
-            <Text style={styles.nextLevel}>→ {userProfile.nextLevel}</Text>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tes contributions</Text>
+          <View style={styles.contributionsContainer}>
+            {missionContributions.map(({ mission, sessions: missionSessionCount, contribution }) => (
+              <View key={mission.id} style={styles.contributionCard}>
+                <Image 
+                  source={{ uri: mission.image }}
+                  style={styles.contributionImage}
+                  contentFit="cover"
+                />
+                <View style={styles.contributionOverlay}>
+                  <Text style={styles.contributionTitle}>{mission.title}</Text>
+                  <Text style={styles.contributionValue}>
+                    {contribution} {mission.unit}
+                  </Text>
+                  <Text style={styles.contributionSessions}>
+                    {missionSessionCount} sessions
+                  </Text>
+                </View>
+              </View>
+            ))}
           </View>
-          <View style={styles.progressContainer}>
+        </View>
+        
+        {recentSessions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Sessions récentes</Text>
+            <View style={styles.sessionsContainer}>
+              {recentSessions.map((session) => (
+                <View key={session.id} style={styles.sessionCard}>
+                  <View style={styles.sessionInfo}>
+                    <Text style={styles.sessionTitle}>{session.missionTitle}</Text>
+                    <Text style={styles.sessionDetails}>
+                      {session.duration} min • {session.points} points
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.sessionStatus,
+                    { backgroundColor: session.status === 'completed' ? colors.success : colors.error }
+                  ]}>
+                    <Text style={styles.sessionStatusText}>
+                      {session.status === 'completed' ? '✓' : '✗'}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Niveau d'impact</Text>
+          <View style={styles.levelCard}>
+            <Text style={styles.levelTitle}>Contributeur Débutant</Text>
+            <Text style={styles.levelDescription}>
+              Continue tes sessions pour débloquer de nouveaux niveaux et badges !
+            </Text>
             <View style={styles.progressBar}>
               <View 
                 style={[
                   styles.progressFill,
-                  { 
-                    width: `${userProfile.levelProgress}%`,
-                    backgroundColor: getProgressColor()
-                  }
-                ]} 
+                  { width: `${Math.min((stats.totalPoints / 100) * 100, 100)}%` }
+                ]}
               />
             </View>
-            <Text style={styles.progressText}>{userProfile.levelProgress}%</Text>
-          </View>
-        </View>
-      </LinearGradient>
-    </View>
-  );
-
-  const StatsOverview = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Tes Statistiques</Text>
-      
-      {/* Stats principales */}
-      <View style={styles.mainStats}>
-        <View style={styles.mainStatCard}>
-          <LinearGradient
-            colors={[colors.primary, colors.primaryLight]}
-            style={styles.statGradient}
-          >
-            <Star size={28} color="white" />
-            <Text style={styles.mainStatValue}>{userStats.totalPoints.toLocaleString()}</Text>
-            <Text style={styles.mainStatLabel}>Points Totaux</Text>
-          </LinearGradient>
-        </View>
-        
-        <View style={styles.mainStatCard}>
-          <LinearGradient
-            colors={[colors.secondary, '#059669']}
-            style={styles.statGradient}
-          >
-            <Timer size={28} color="white" />
-            <Text style={styles.mainStatValue}>{Math.floor(userStats.totalMinutes / 60)}h</Text>
-            <Text style={styles.mainStatLabel}>Temps Total</Text>
-          </LinearGradient>
-        </View>
-      </View>
-
-      {/* Stats détaillées */}
-      <View style={styles.detailedStats}>
-        <View style={styles.statRow}>
-          <View style={styles.statItem}>
-            <Target size={20} color={colors.primary} />
-            <Text style={styles.statValue}>{userStats.totalSessions}</Text>
-            <Text style={styles.statLabel}>Sessions</Text>
-          </View>
-          <View style={styles.statItem}>
-            <TrendingUp size={20} color={colors.secondary} />
-            <Text style={styles.statValue}>{userStats.currentStreak}</Text>
-            <Text style={styles.statLabel}>Série Actuelle</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Award size={20} color={colors.accent} />
-            <Text style={styles.statValue}>{userStats.longestStreak}</Text>
-            <Text style={styles.statLabel}>Record</Text>
-          </View>
-        </View>
-        
-        <View style={styles.statRow}>
-          <View style={styles.statItem}>
-            <Calendar size={20} color="#8B5CF6" />
-            <Text style={styles.statValue}>{userStats.averageSession}min</Text>
-            <Text style={styles.statLabel}>Moy. Session</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Smartphone size={20} color="#6B7280" />
-            <Text style={styles.statValue}>{userStats.favoriteTime}</Text>
-            <Text style={styles.statLabel}>Heure Préférée</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Globe size={20} color="#3B82F6" />
-            <Text style={styles.statValue}>#{42}</Text>
-            <Text style={styles.statLabel}>Classement</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
-  const ImpactSection = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Ton Impact Réel</Text>
-      
-      <View style={styles.impactGrid}>
-        <View style={styles.impactCard}>
-          <Leaf size={32} color={colors.missions.tree} />
-          <Text style={styles.impactValue}>{userStats.totalImpact.trees}</Text>
-          <Text style={styles.impactLabel}>Arbres plantés</Text>
-          <Text style={styles.impactEquivalent}>= 2.7 tonnes CO2 absorbées</Text>
-        </View>
-        
-        <View style={styles.impactCard}>
-          <Globe size={32} color={colors.missions.water} />
-          <Text style={styles.impactValue}>{userStats.totalImpact.water}L</Text>
-          <Text style={styles.impactLabel}>Eau potable</Text>
-          <Text style={styles.impactEquivalent}>= 142 personnes/jour</Text>
-        </View>
-        
-        <View style={styles.impactCard}>
-          <Heart size={32} color={colors.missions.education} />
-          <Text style={styles.impactValue}>{userStats.totalImpact.education}h</Text>
-          <Text style={styles.impactLabel}>Enseignement</Text>
-          <Text style={styles.impactEquivalent}>= 3 enfants éduqués</Text>
-        </View>
-        
-        <View style={styles.impactCard}>
-          <Shield size={32} color="#EF4444" />
-          <Text style={styles.impactValue}>{userStats.totalImpact.health}</Text>
-          <Text style={styles.impactLabel}>Consultations</Text>
-          <Text style={styles.impactEquivalent}>= 23 vies sauvées</Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const AchievementsSection = () => {
-    const unlockedAchievements = achievements.filter(a => a.unlocked);
-    const displayedAchievements = showAllAchievements ? achievements : unlockedAchievements.slice(0, 6);
-    
-    return (
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Tes Badges</Text>
-          <Text style={styles.achievementCounter}>
-            {unlockedAchievements.length}/{achievements.length}
-          </Text>
-        </View>
-        
-        <View style={styles.achievementsGrid}>
-          {displayedAchievements.map((achievement) => {
-            const IconComponent = achievement.icon;
-            return (
-              <TouchableOpacity
-                key={achievement.id}
-                style={[
-                  styles.achievementCard,
-                  !achievement.unlocked && styles.lockedAchievement
-                ]}
-                onPress={() => {
-                  Alert.alert(
-                    achievement.title,
-                    `${achievement.description}\n\nRareté: ${achievement.rarity}${achievement.unlockedAt ? `\nDébloqué le: ${new Date(achievement.unlockedAt).toLocaleDateString('fr-FR')}` : ''}`,
-                    [{ text: "Cool !", style: "default" }]
-                  );
-                }}
-              >
-                <View style={[
-                  styles.achievementIcon,
-                  { 
-                    backgroundColor: achievement.unlocked ? achievement.color : colors.border,
-                    borderColor: getRarityColor(achievement.rarity),
-                    borderWidth: achievement.unlocked ? 2 : 1
-                  }
-                ]}>
-                  <IconComponent 
-                    size={24} 
-                    color={achievement.unlocked ? 'white' : colors.textLight} 
-                  />
-                </View>
-                <Text style={[
-                  styles.achievementTitle,
-                  !achievement.unlocked && styles.lockedText
-                ]}>
-                  {achievement.title}
-                </Text>
-                <Text style={[
-                  styles.achievementDescription,
-                  !achievement.unlocked && styles.lockedText
-                ]}>
-                  {achievement.description}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        
-        {!showAllAchievements && achievements.length > 6 && (
-          <TouchableOpacity 
-            style={styles.showMoreButton}
-            onPress={() => setShowAllAchievements(true)}
-          >
-            <Text style={styles.showMoreText}>Voir tous les badges</Text>
-            <ChevronRight size={16} color={colors.primary} />
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
-  const MonthlyChart = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Évolution Mensuelle</Text>
-      
-      <View style={styles.chartContainer}>
-        <View style={styles.chartBars}>
-          {monthlyData.map((data, index) => {
-            const maxSessions = Math.max(...monthlyData.map(d => d.sessions));
-            const height = (data.sessions / maxSessions) * 100;
-            
-            return (
-              <View key={data.month} style={styles.barContainer}>
-                <View style={styles.barColumn}>
-                  <View 
-                    style={[
-                      styles.bar,
-                      { 
-                        height: `${height}%`,
-                        backgroundColor: index === monthlyData.length - 1 ? colors.primary : colors.secondary
-                      }
-                    ]}
-                  />
-                </View>
-                <Text style={styles.barLabel}>{data.month}</Text>
-                <Text style={styles.barValue}>{data.sessions}</Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
-    </View>
-  );
-
-  const SettingsSection = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Paramètres</Text>
-      
-      <View style={styles.settingsGroup}>
-        <TouchableOpacity style={styles.settingItem}>
-          <Bell size={20} color={colors.textSecondary} />
-          <Text style={styles.settingText}>Notifications</Text>
-          <ChevronRight size={20} color={colors.textLight} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem}>
-          <Shield size={20} color={colors.textSecondary} />
-          <Text style={styles.settingText}>Confidentialité</Text>
-          <ChevronRight size={20} color={colors.textLight} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem}>
-          <HelpCircle size={20} color={colors.textSecondary} />
-          <Text style={styles.settingText}>Aide & Support</Text>
-          <ChevronRight size={20} color={colors.textLight} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.settingItem, styles.dangerSetting]}
-          onPress={() => {
-            Alert.alert(
-              "Déconnexion",
-              "Es-tu sûr de vouloir te déconnecter ?",
-              [
-                { text: "Annuler", style: "cancel" },
-                { text: "Déconnecter", style: "destructive" }
-              ]
-            );
-          }}
-        >
-          <LogOut size={20} color={colors.error} />
-          <Text style={[styles.settingText, { color: colors.error }]}>Déconnexion</Text>
-          <ChevronRight size={20} color={colors.error} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
-      
-      <ScrollView 
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <ProfileHeader />
-        
-        {/* Tabs */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'overview' && styles.activeTab]}
-            onPress={() => setActiveTab('overview')}
-          >
-            <Text style={[styles.tabText, activeTab === 'overview' && styles.activeTabText]}>
-              Aperçu
+            <Text style={styles.progressText}>
+              {stats.totalPoints} / 100 points pour le niveau suivant
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'achievements' && styles.activeTab]}
-            onPress={() => setActiveTab('achievements')}
-          >
-            <Text style={[styles.tabText, activeTab === 'achievements' && styles.activeTabText]}>
-              Badges
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'settings' && styles.activeTab]}
-            onPress={() => setActiveTab('settings')}
-          >
-            <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>
-              Paramètres
-            </Text>
-          </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Contenu des tabs */}
-        {activeTab === 'overview' && (
-          <>
-            <StatsOverview />
-            <ImpactSection />
-            <MonthlyChart />
-          </>
-        )}
-        
-        {activeTab === 'achievements' && <AchievementsSection />}
-        
-        {activeTab === 'settings' && <SettingsSection />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -619,147 +167,79 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollContainer: {
-    flex: 1,
-  },
   scrollContent: {
     paddingBottom: 120,
   },
   profileHeader: {
-    marginBottom: 20,
-  },
-  headerGradient: {
-    padding: 24,
-    paddingTop: 16,
-  },
-  avatarSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    backgroundColor: colors.card,
+    marginBottom: 24,
   },
   avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
+  avatarText: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "white",
   },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userInfo: {
-    marginBottom: 20,
-  },
-  userName: {
+  profileName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: "bold",
+    color: colors.text,
     marginBottom: 4,
   },
-  userUsername: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: 4,
-  },
-  userLocation: {
+  profileSubtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: 12,
+    color: colors.textLight,
   },
-  userBio: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
-    lineHeight: 22,
-  },
-  levelSection: {
+  statsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 24,
     gap: 12,
-  },
-  levelInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  currentLevel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-  },
-  nextLevel: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white',
-    minWidth: 40,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    marginHorizontal: 24,
-    borderRadius: 12,
-    padding: 4,
     marginBottom: 24,
   },
-  tab: {
+  statCard: {
     flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
+    minWidth: "45%",
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  activeTab: {
-    backgroundColor: colors.primary,
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
+  statValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: colors.text,
+    marginBottom: 4,
   },
-  activeTabText: {
-    color: 'white',
+  statLabel: {
+    fontSize: 12,
+    color: colors.textLight,
+    textAlign: "center",
   },
   section: {
     paddingHorizontal: 24,
@@ -767,222 +247,123 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+  contributionsContainer: {
+    gap: 12,
   },
-  achievementCounter: {
+  contributionCard: {
+    height: 120,
+    borderRadius: 16,
+    overflow: "hidden",
+    position: "relative",
+  },
+  contributionImage: {
+    width: "100%",
+    height: "100%",
+  },
+  contributionOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: 16,
+  },
+  contributionTitle: {
     fontSize: 16,
-    color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: "600",
+    color: "white",
+    marginBottom: 4,
   },
-  mainStats: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
-  mainStatCard: {
-    flex: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  statGradient: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  mainStatValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginVertical: 8,
-  },
-  mainStatLabel: {
+  contributionValue: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '500',
+    color: "white",
+    marginBottom: 2,
   },
-  detailedStats: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    gap: 20,
+  contributionSessions: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
   },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
+  sessionsContainer: {
     gap: 8,
   },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  impactGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  impactCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  impactValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginVertical: 12,
-  },
-  impactLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  impactEquivalent: {
-    fontSize: 11,
-    color: colors.textLight,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  achievementsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  achievementCard: {
-    width: '30%',
-    backgroundColor: colors.surface,
+  sessionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sessionInfo: {
+    flex: 1,
+  },
+  sessionTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: colors.text,
+    marginBottom: 4,
+  },
+  sessionDetails: {
+    fontSize: 14,
+    color: colors.textLight,
+  },
+  sessionStatus: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sessionStatusText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "white",
+  },
+  levelCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
-  lockedAchievement: {
-    opacity: 0.6,
-  },
-  achievementIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  achievementTitle: {
-    fontSize: 12,
-    fontWeight: '600',
+  levelTitle: {
+    fontSize: 18,
+    fontWeight: "600",
     color: colors.text,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  achievementDescription: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 14,
-  },
-  lockedText: {
-    color: colors.textLight,
-  },
-  showMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  showMoreText: {
-    fontSize: 16,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  chartContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    height: 200,
-  },
-  chartBars: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-around',
-    gap: 8,
-  },
-  barContainer: {
-    flex: 1,
-    alignItems: 'center',
-    height: '100%',
-  },
-  barColumn: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    width: '100%',
     marginBottom: 8,
   },
-  bar: {
-    width: '100%',
-    borderRadius: 4,
-    minHeight: 4,
-  },
-  barLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  barValue: {
+  levelDescription: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
+    color: colors.textLight,
+    marginBottom: 16,
+    lineHeight: 20,
   },
-  settingsGroup: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    overflow: 'hidden',
+  progressBar: {
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 8,
   },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  progressFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 4,
   },
-  dangerSetting: {
-    borderBottomWidth: 0,
-  },
-  settingText: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text,
-    marginLeft: 16,
+  progressText: {
+    fontSize: 12,
+    color: colors.textLight,
+    textAlign: "center",
   },
 });
