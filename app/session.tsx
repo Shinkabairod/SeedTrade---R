@@ -1,4 +1,266 @@
-import React, { useState, useEffect, useRef } from 'react';
+// Types
+interface Milestone {
+  minutes: number;
+  message: string;
+  points: number;
+}
+
+interface SessionState {
+  isActive: boolean;
+  isPaused: boolean;
+  timeLeft: number;
+  originalDuration: number;
+  elapsedTime: number;
+  currentQuote: number;
+  showMotivation: boolean;
+  achievedMilestones: number[];
+  sessionEnded: boolean;
+  phonePickups: number;
+}
+
+export default function SessionScreen() {
+  // État de la session
+  const [isActive, setIsActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes par défaut
+  const [originalDuration, setOriginalDuration] = useState(15 * 60);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // État de l'interface
+  const [currentQuote, setCurrentQuote] = useState(0);
+  const [showMotivation, setShowMotivation] = useState(false);
+  const [achievedMilestones, setAchievedMilestones] = useState<number[]>([]);
+  const [sessionEnded, setSessionEnded] = useState(false);
+  const [phonePickups, setPhonePickups] = useState(0);
+  
+  // Animation values
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const motivationAnim = useRef(new Animated.Value(0)).current;
+  
+  // Refs
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const quoteIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const appStateRef = useRef(AppState.currentState);
+
+  // Mission active
+  const activeMission = {
+    title: 'Plantation d\'arbres',
+    description: 'Contribue à la reforestation mondiale',
+    color: colors.missions.tree,
+    pointsPerMinute: 2.5,
+    impact: 'arbres plantés',
+  };
+
+  useEffect(() => {
+    // Animation d'entrée
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+
+    // Détection de changement d'état de l'app
+    const handleAppStateChange = (nextAppState: string) => {
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // L'utilisateur revient dans l'app pendant une session
+        if (isActive && !isPaused) {
+          setPhonePickups(prev => prev + 1);
+          Vibration.vibrate([0, 500, 200, 500]);
+          
+          Alert.alert(
+            "Oups ! 📱",
+            "Tu as utilisé ton téléphone pendant la session. Continue ton effort pour maximiser ton impact !",
+            [
+              { text: "Continuer", style: "default" },
+              { text: "Terminer", style: "destructive", onPress: handleEndSession }
+            ]
+          );
+        }
+      }
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [isActive, isPaused]);
+
+  // Timer principal
+  useEffect(() => {
+    if (isActive && !isPaused && timeLeft > 0) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          const newTime = prev - 1;
+          setElapsedTime(originalDuration - newTime);
+          
+          // Vérifier les milestones
+          const elapsedMinutes = Math.floor((originalDuration - newTime) / 60);
+          const milestone = sessionMilestones.find(m => 
+            m.minutes === elapsedMinutes && 
+            !achievedMilestones.includes(m.minutes)
+          );
+          
+          if (milestone) {
+            setAchievedMilestones(prev => [...prev, milestone.minutes]);
+            showMilestoneAchieved(milestone);
+          }
+          
+          if (newTime <= 0) {
+            handleSessionComplete();
+            return 0;
+          }
+          
+          return newTime;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isActive, isPaused, timeLeft, originalDuration, achievedMilestones]);
+
+  // Rotation des citations motivationnelles
+  useEffect(() => {
+    if (isActive && !isPaused) {
+      quoteIntervalRef.current = setInterval(() => {
+        setCurrentQuote(prev => (prev + 1) % motivationalQuotes.length);
+        showMotivationalQuote();
+      }, 30000); // Nouvelle citation toutes les 30 secondes
+    } else {
+      if (quoteIntervalRef.current) {
+        clearInterval(quoteIntervalRef.current);
+      }
+    }
+
+    return () => {
+      if (quoteIntervalRef.current) {
+        clearInterval(quoteIntervalRef.current);
+      }
+    };
+  }, [isActive, isPaused]);
+
+  // Animation du pouls pour le timer
+  useEffect(() => {
+    if (isActive && !isPaused) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [isActive, isPaused]);
+
+  // Mise à jour de la barre de progression
+  useEffect(() => {
+    const progress = elapsedTime / originalDuration;
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [elapsedTime, originalDuration]);
+
+  const showMotivationalQuote = () => {
+    setShowMotivation(true);
+    Animated.sequence([
+      Animated.timing(motivationAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.delay(3000),
+      Animated.timing(motivationAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowMotivation(false));
+  };
+
+  const showMilestoneAchieved = (milestone: Milestone) => {
+    Vibration.vibrate(200);
+    Alert.alert(
+      "Milestone atteint ! 🎉",
+      `${milestone.message}\n+${milestone.points} points bonus !`,
+      [{ text: "Continuer ! 💪", style: "default" }]
+    );
+  };
+
+  const handleStart = () => {
+    setIsActive(true);
+    setIsPaused(false);
+    Vibration.vibrate(100);
+  };
+
+  const handlePause = () => {
+    setIsPaused(!isPaused);
+    Vibration.vibrate(100);
+  };
+
+  const handleReset = () => {
+    Alert.alert(
+      "Recommencer ?",
+      "Es-tu sûr de vouloir recommencer la session ? Ton progression sera perdue.",
+      [
+        { text: "Annuler", style: "cancel" },
+        { 
+          text: "Recommencer", 
+          style: "destructive",
+          onPress: () => {
+            setIsActive(false);
+            setIsPaused(false);
+            setTimeLeft(originalDuration);
+            setElapsedTime(0);
+            setAchievedMilestones([]);
+            setPhonePickups(0);
+            setSessionEnded(false);
+            Vibration.vibrate(100);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleEndSession = () => {
+    const elapsedMinutes = Math.floor(elapsedTime / 60);
+    const basePoints = elapsedMinutes * activeMission.pointsPerMinute;
+    const milestoneBonus = achievedMilestones.reduce((acc, minutes) => {
+      const milestone = sessionMilestones.find(m => m.minutes === minutes);
+      return acc + (milestone?.points || 0);
+    }, 0);
+    const phonePickupPenalty = phonePickups * 5; // -5 points par utilisation du téléphone
+    const totalPoints = Math.max(0, basePoints + milestoneBonus - phonePickupPenalty);
+
+    setIsActive(false);
+    setSessionEnded(true);
+    
+    setTimeout(() => {
+      Alert.alert(
+        "Session terminée ! 🎯",
+        `Temps écoulé: ${Math.floor(elapsedMinutes)} minutes
+Points gagnés: ${totalPoints}
+Bonus milestones: +${milestoneBonus}
+${phonePickups > 0 ? `Pénalité téléphone: -${phonePickupPenalty}` : ''}
+Impact: ${import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -280,6 +542,26 @@ export default function SessionScreen() {
 Points gagnés: ${totalPoints}
 Bonus milestones: +${milestoneBonus}
 ${phonePickups > 0 ? `Pénalité téléphone: -${phonePickupPenalty}` : ''}
+  const handleEndSession = () => {
+    const elapsedMinutes = Math.floor(elapsedTime / 60);
+    const basePoints = elapsedMinutes * activeMission.pointsPerMinute;
+    const milestoneBonus = achievedMilestones.reduce((acc, minutes) => {
+      const milestone = sessionMilestones.find(m => m.minutes === minutes);
+      return acc + (milestone?.points || 0);
+    }, 0);
+    const phonePickupPenalty = phonePickups * 5; // -5 points par utilisation du téléphone
+    const totalPoints = Math.max(0, basePoints + milestoneBonus - phonePickupPenalty);
+
+    setIsActive(false);
+    setSessionEnded(true);
+    
+    setTimeout(() => {
+      Alert.alert(
+        "Session terminée ! 🎯",
+        `Temps écoulé: ${Math.floor(elapsedMinutes)} minutes
+Points gagnés: ${totalPoints}
+Bonus milestones: +${milestoneBonus}
+${phonePickups > 0 ? `Pénalité téléphone: -${phonePickupPenalty}` : ''}
 Impact: ${Math.floor(totalPoints / activeMission.pointsPerMinute)} ${activeMission.impact}`,
         [
           { text: "Partager", onPress: handleShare },
@@ -331,13 +613,13 @@ Impact: ${Math.floor(totalPoints / activeMission.pointsPerMinute)} ${activeMissi
     );
   };
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getSessionPhase = () => {
+  const getSessionPhase = (): string => {
     const progress = elapsedTime / originalDuration;
     if (progress < 0.25) return "Démarrage";
     if (progress < 0.5) return "Concentration";
@@ -451,7 +733,7 @@ Impact: ${Math.floor(totalPoints / activeMission.pointsPerMinute)} ${activeMissi
           </Text>
         </View>
 
-        {/* Statistiques de session */}
+        {/* Stats de session */}
         <View style={styles.sessionStats}>
           <View style={styles.statItem}>
             <Award size={20} color="rgba(255,255,255,0.8)" />
