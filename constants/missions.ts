@@ -1,87 +1,97 @@
+import { TreePine, Waves, Recycle, Heart, Globe, Lightbulb } from 'lucide-react-native';
+
 export interface Mission {
   id: string;
   title: string;
   description: string;
-  image: string;
+  detailedDescription: string;
+  icon: any;
   color: string;
   pointsPerMinute: number;
-  current: number;
-  target: number;
   unit: string;
+  impactDescription: string;
   category: 'environment' | 'social' | 'education';
 }
 
 export const missions: Mission[] = [
   {
     id: 'reforestation',
-    title: 'Reforestation Mondiale',
-    description: 'Aide à planter des arbres pour lutter contre le changement climatique et restaurer les écosystèmes forestiers.',
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=800',
-    color: '#22c55e',
+    title: 'Reforestation',
+    description: 'Chaque minute = 1 arbre planté',
+    detailedDescription: 'Contribuez à la reforestation mondiale. Votre temps de déconnexion finance la plantation d\'arbres dans des zones déforestées.',
+    icon: TreePine,
+    color: '#2E7D32',
     pointsPerMinute: 10,
-    current: 12847,
-    target: 50000,
     unit: 'arbres plantés',
+    impactDescription: 'Votre session permet de planter des arbres qui absorberont du CO2 pendant des décennies.',
     category: 'environment',
   },
   {
     id: 'ocean',
-    title: 'Nettoyage des Océans',
-    description: 'Contribue au nettoyage des océans et à la protection de la vie marine en finançant des projets de dépollution.',
-    image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=800',
-    color: '#3b82f6',
+    title: 'Nettoyage océan',
+    description: 'Chaque minute = 50g déchets retirés',
+    detailedDescription: 'Aidez à nettoyer nos océans. Votre temps finance l\'extraction de déchets plastiques des océans.',
+    icon: Waves,
+    color: '#1976D2',
     pointsPerMinute: 8,
-    current: 8932,
-    target: 25000,
-    unit: 'kg de déchets collectés',
+    unit: 'kg déchets retirés',
+    impactDescription: 'Votre session contribue à retirer des déchets plastiques qui menacent la vie marine.',
     category: 'environment',
   },
   {
     id: 'recycling',
-    title: 'Recyclage Intelligent',
-    description: 'Soutient les programmes de recyclage et de réutilisation des matériaux pour réduire les déchets.',
-    image: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=800',
-    color: '#8b5cf6',
+    title: 'Recyclage',
+    description: 'Chaque minute = matériaux recyclés',
+    detailedDescription: 'Soutenez les programmes de recyclage locaux et la transformation de déchets en ressources utiles.',
+    icon: Recycle,
+    color: '#388E3C',
     pointsPerMinute: 12,
-    current: 5643,
-    target: 20000,
-    unit: 'kg recyclés',
+    unit: 'kg matériaux recyclés',
+    impactDescription: 'Votre session finance le recyclage de matériaux qui retrouvent une seconde vie.',
     category: 'environment',
-  },
-  {
-    id: 'clean-water',
-    title: 'Accès à l\'Eau Potable',
-    description: 'Finance la construction de puits et systèmes d\'assainissement dans les communautés qui en ont besoin.',
-    image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?q=80&w=800',
-    color: '#06B6D4',
-    pointsPerMinute: 9,
-    current: 156432,
-    target: 500000,
-    unit: 'litres d\'eau fournis',
-    category: 'social',
   },
   {
     id: 'education',
-    title: 'Éducation pour Tous',
-    description: 'Soutient l\'éducation d\'enfants défavorisés en finançant fournitures scolaires et frais de scolarité.',
-    image: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?q=80&w=800',
-    color: '#F59E0B',
-    pointsPerMinute: 11,
-    current: 2847,
-    target: 10000,
-    unit: 'heures d\'enseignement',
+    title: 'Éducation',
+    description: 'Chaque minute = 1 heure d\'école financée',
+    detailedDescription: 'Financez l\'éducation d\'enfants dans des régions défavorisées du monde.',
+    icon: Lightbulb,
+    color: '#F57C00',
+    pointsPerMinute: 15,
+    unit: 'heures d\'école financées',
+    impactDescription: 'Votre session offre des opportunités d\'éducation à des enfants dans le besoin.',
     category: 'education',
   },
   {
-    id: 'renewable-energy',
-    title: 'Énergie Renouvelable',
-    description: 'Contribue au développement de l\'énergie solaire et éolienne dans les communautés isolées.',
-    image: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=800',
-    color: '#8B5CF6',
-    pointsPerMinute: 7,
-    current: 45672,
-    target: 100000,
-    unit: 'kWh d\'énergie verte',
-    category: 'environment',
+    id: 'health',
+    title: 'Santé communautaire',
+    description: 'Chaque minute = soins de santé',
+    detailedDescription: 'Financez des soins de santé de base dans des communautés sans accès médical.',
+    icon: Heart,
+    color: '#C62828',
+    pointsPerMinute: 18,
+    unit: 'soins financés',
+    impactDescription: 'Votre session permet d\'apporter des soins médicaux essentiels.',
+    category: 'social',
+  },
+  {
+    id: 'water',
+    title: 'Eau potable',
+    description: 'Chaque minute = 10L eau potable',
+    detailedDescription: 'Financez l\'accès à l\'eau potable dans des régions où elle fait défaut.',
+    icon: Globe,
+    color: '#0277BD',
+    pointsPerMinute: 14,
+    unit: 'litres d\'eau potable',
+    impactDescription: 'Votre session fournit de l\'eau potable à des familles dans le besoin.',
+    category: 'social',
   },
 ];
+
+export const getMissionById = (id: string): Mission | undefined => {
+  return missions.find(mission => mission.id === id);
+};
+
+export const getMissionsByCategory = (category: Mission['category']): Mission[] => {
+  return missions.filter(mission => mission.category === category);
+};
