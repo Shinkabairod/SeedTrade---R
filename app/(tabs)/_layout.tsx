@@ -75,13 +75,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="achievements"
-        options={{
-          title: "Succès",
-          tabBarIcon: ({ focused }) => <TabBarIcon Icon={User} focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: "Profil",
