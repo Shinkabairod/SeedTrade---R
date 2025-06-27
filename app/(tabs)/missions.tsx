@@ -1,234 +1,248 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronRight, Info, CheckCircle } from "lucide-react-native";
-import { useSessionStore } from "@/store/useSessionStore";
-import { missions } from "@/constants/missions";
-import MissionCard from "@/components/MissionCard";
-import colors from "@/constants/colors";
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { X, Play, Info, Award } from 'lucide-react-native';
+import { missions, Mission } from '@/constants/missions';
+import { useSessionStore } from '@/store/useSessionStore';
+import colors from '@/constants/colors';
 
 export default function MissionsScreen() {
-  const { activeMissionId, setActiveMission } = useSessionStore();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { activeMissionId, setActiveMission, stats, sessions } = useSessionStore();
+  const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
+  const [showMissionDetail, setShowMissionDetail] = useState(false);
 
-  const categories = [
-    { id: 'all', label: 'Toutes', count: missions.length },
-    { id: 'environment', label: 'Environnement', count: missions.filter(m => m.category === 'environment').length },
-    { id: 'social', label: 'Social', count: missions.filter(m => m.category === 'social').length },
-    { id: 'education', label: 'Éducation', count: missions.filter(m => m.category === 'education').length },
-  ];
-
-  const filteredMissions = selectedCategory === 'all' 
-    ? missions 
-    : missions.filter(m => m.category === selectedCategory);
-
-  const handleSelectMission = (missionId: string) => {
-    const mission = missions.find(m => m.id === missionId);
-    if (!mission) return;
-
-    if (activeMissionId !== missionId) {
-      Alert.alert(
-        'Changer de mission ?',
-        `Veux-tu vraiment changer pour "${mission.title}" ?
-
-Tu gagneras ${mission.pointsPerMinute} points par minute avec cette mission.`,
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { 
-            text: 'Changer', 
-            style: 'default',
-            onPress: () => {
-              setActiveMission(missionId);
-              Alert.alert(
-                'Mission activée ! 🎯',
-                `Tu contribues maintenant à "${mission.title}"`,
-                [{ text: 'Super !', style: 'default' }]
-              );
-            }
-          }
-        ]
-      );
-    }
+  const getMissionStats = (missionId: string) => {
+    const missionSessions = sessions.filter(
+      session => session.missionId === missionId && session.status === 'completed'
+    );
+    
+    const totalSessions = missionSessions.length;
+    const totalMinutes = missionSessions.reduce((sum, session) => sum + (session.actualDuration || 0), 0);
+    const totalPoints = missionSessions.reduce((sum, session) => sum + session.points, 0);
+    
+    return {
+      totalSessions,
+      totalMinutes,
+      totalPoints,
+      impact: Math.floor(totalPoints / (missions.find(m => m.id === missionId)?.pointsPerMinute || 1)),
+    };
   };
 
-  const showMissionInfo = (mission: typeof missions[0]) => {
-    const progress = (mission.current / mission.target) * 100;
-    
+  const handleMissionPress = (mission: Mission) => {
+    setSelectedMission(mission);
+    setShowMissionDetail(true);
+  };
+
+  const handleSelectMission = (mission: Mission) => {
+    setActiveMission(mission.id);
+    setShowMissionDetail(false);
     Alert.alert(
-      mission.title,
-      `${mission.description}
-
-📊 Progression: ${mission.current.toLocaleString()} / ${mission.target.toLocaleString()} ${mission.unit} (${progress.toFixed(1)}%)
-
-💰 ${mission.pointsPerMinute} points par minute
-
-🏷️ Catégorie: ${mission.category}`,
-      [{ text: 'OK', style: 'default' }]
+      'Mission sélectionnée',
+      `${mission.title} est maintenant votre mission active !`
     );
   };
 
+  const renderMissionDetail = () => {
+    if (!selectedMission) return null;
+
+    const missionStats = getMissionStats(selectedMission.id);
+    const isActive = activeMissionId === selectedMission.id;
+
+    return (
+      <Modal
+        visible={showMissionDetail}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowMissionDetail(false)}
+            >
+              <X size={24} color={colors.textLight} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Détails de la mission</Text>
+            <View style={styles.placeholder} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={[styles.missionIcon, { backgroundColor: selectedMission.color }]}>
+              <selectedMission.icon size={48} color="white" />
+            </View>
+
+            <Text style={styles.missionTitle}>{selectedMission.title}</Text>
+            <Text style={styles.missionDescription}>
+              {selectedMission.detailedDescription}
+            </Text>
+
+            <View style={styles.impactSection}>
+              <Text style={styles.sectionTitle}>Votre impact</Text>
+              <Text style={styles.impactDescription}>
+                {selectedMission.impactDescription}
+              </Text>
+              
+              <View style={styles.impactMetric}>
+                <Text style={styles.impactValue}>
+                  {selectedMission.pointsPerMinute} points
+                </Text>
+                <Text style={styles.impactLabel}>par minute</Text>
+              </View>
+            </View>
+
+            <View style={styles.statsSection}>
+              <Text style={styles.sectionTitle}>Vos statistiques</Text>
+              
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Sessions complétées</Text>
+                <Text style={styles.statValue}>{missionStats.totalSessions}</Text>
+              </View>
+              
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Temps total</Text>
+                <Text style={styles.statValue}>{missionStats.totalMinutes} min</Text>
+              </View>
+              
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Points gagnés</Text>
+                <Text style={styles.statValue}>{missionStats.totalPoints}</Text>
+              </View>
+              
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>{selectedMission.unit}</Text>
+                <Text style={[styles.statValue, { color: selectedMission.color }]}>
+                  {missionStats.impact}
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={styles.modalFooter}>
+            {!isActive ? (
+              <TouchableOpacity
+                style={[styles.selectButton, { backgroundColor: selectedMission.color }]}
+                onPress={() => handleSelectMission(selectedMission)}
+              >
+                <Play size={20} color="white" />
+                <Text style={styles.selectButtonText}>Sélectionner cette mission</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.activeIndicator}>
+                <Award size={20} color={colors.success} />
+                <Text style={styles.activeText}>Mission active</Text>
+              </View>
+            )}
+          </View>
+        </SafeAreaView>
+      </Modal>
+    );
+  };
+
+  const renderMissionCard = (mission: Mission) => {
+    const missionStats = getMissionStats(mission.id);
+    const isActive = activeMissionId === mission.id;
+
+    return (
+      <TouchableOpacity
+        key={mission.id}
+        style={[styles.missionCard, isActive && styles.activeMissionCard]}
+        onPress={() => handleMissionPress(mission)}
+      >
+        <View style={styles.missionCardHeader}>
+          <View style={[styles.missionCardIcon, { backgroundColor: mission.color }]}>
+            <mission.icon size={28} color="white" />
+          </View>
+          
+          <View style={styles.missionCardContent}>
+            <Text style={styles.missionCardTitle}>{mission.title}</Text>
+            <Text style={styles.missionCardDescription}>{mission.description}</Text>
+          </View>
+          
+          <TouchableOpacity style={styles.infoButton}>
+            <Info size={20} color={colors.textLight} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.missionStats}>
+          <View style={styles.missionStatItem}>
+            <Text style={styles.missionStatValue}>{missionStats.totalSessions}</Text>
+            <Text style={styles.missionStatLabel}>Sessions</Text>
+          </View>
+          
+          <View style={styles.missionStatItem}>
+            <Text style={styles.missionStatValue}>{missionStats.totalMinutes}</Text>
+            <Text style={styles.missionStatLabel}>Minutes</Text>
+          </View>
+          
+          <View style={styles.missionStatItem}>
+            <Text style={[styles.missionStatValue, { color: mission.color }]}>
+              {missionStats.impact}
+            </Text>
+            <Text style={styles.missionStatLabel} numberOfLines={1}>
+              {mission.unit}
+            </Text>
+          </View>
+        </View>
+
+        {isActive && (
+          <View style={styles.activeIndicatorSmall}>
+            <Award size={16} color={colors.success} />
+            <Text style={styles.activeTextSmall}>Active</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const groupedMissions = {
+    environment: missions.filter(m => m.category === 'environment'),
+    social: missions.filter(m => m.category === 'social'),
+    education: missions.filter(m => m.category === 'education'),
+  };
+
+  const categoryTitles = {
+    environment: 'Environnement',
+    social: 'Social',
+    education: 'Éducation',
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Choisis ta Mission</Text>
-        <Text style={styles.headerSubtitle}>
-          Sélectionne la cause qui te tient à cœur
+        <Text style={styles.title}>Missions</Text>
+        <Text style={styles.subtitle}>
+          Choisissez votre impact pour un monde meilleur
         </Text>
       </View>
 
-      {/* Categories filter */}
-      <View style={styles.categoriesContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesScroll}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={[
-                styles.categoryButton,
-                selectedCategory === category.id && styles.selectedCategory,
-              ]}
-              onPress={() => setSelectedCategory(category.id)}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  selectedCategory === category.id && styles.selectedCategoryText,
-                ]}
-              >
-                {category.label}
-              </Text>
-              <View style={[
-                styles.categoryBadge,
-                selectedCategory === category.id && styles.selectedCategoryBadge,
-              ]}>
-                <Text style={[
-                  styles.categoryCount,
-                  selectedCategory === category.id && styles.selectedCategoryCount,
-                ]}>
-                  {category.count}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Active mission highlight */}
-        <View style={styles.activeMissionSection}>
-          <Text style={styles.sectionTitle}>Ta mission active</Text>
-          {(() => {
-            const activeMission = missions.find(m => m.id === activeMissionId);
-            return activeMission ? (
-              <View style={styles.activeMissionContainer}>
-                <MissionCard
-                  mission={activeMission}
-                  isActive={true}
-                  onPress={() => {}}
-                />
-                <TouchableOpacity 
-                  style={styles.infoButton}
-                  onPress={() => showMissionInfo(activeMission)}
-                >
-                  <Info size={20} color={colors.primary} />
-                  <Text style={styles.infoButtonText}>Plus d'infos</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null;
-          })()}
-        </View>
-
-        {/* All missions */}
-        <View style={styles.allMissionsSection}>
-          <Text style={styles.sectionTitle}>
-            {selectedCategory === 'all' ? 'Toutes les missions' : `Missions ${categories.find(c => c.id === selectedCategory)?.label.toLowerCase()}`}
-          </Text>
-          <Text style={styles.sectionSubtitle}>
-            Touche une mission pour la sélectionner
-          </Text>
-          
-          <View style={styles.missionsGrid}>
-            {filteredMissions.map((mission) => (
-              <View key={mission.id} style={styles.missionContainer}>
-                <MissionCard
-                  mission={mission}
-                  isActive={activeMissionId === mission.id}
-                  onPress={() => handleSelectMission(mission.id)}
-                />
-                <View style={styles.missionFooter}>
-                  <TouchableOpacity 
-                    style={styles.missionInfoButton}
-                    onPress={() => showMissionInfo(mission)}
-                  >
-                    <Info size={16} color={colors.textLight} />
-                  </TouchableOpacity>
-                  <View style={styles.missionMeta}>
-                    <Text style={styles.missionCategory}>
-                      {mission.category}
-                    </Text>
-                    <Text style={styles.missionProgress}>
-                      {((mission.current / mission.target) * 100).toFixed(1)}% complété
-                    </Text>
-                  </View>
-                  {activeMissionId === mission.id && (
-                    <View style={styles.activeIndicator}>
-                      <CheckCircle size={16} color={colors.success} />
-                    </View>
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Impact summary */}
-        <View style={styles.impactSection}>
-          <Text style={styles.sectionTitle}>Impact global</Text>
-          <View style={styles.impactContainer}>
-            <View style={styles.impactStats}>
-              {missions.slice(0, 3).map((mission) => (
-                <View key={mission.id} style={styles.impactStat}>
-                  <Text style={styles.impactValue}>
-                    {mission.current.toLocaleString()}
-                  </Text>
-                  <Text style={styles.impactLabel}>
-                    {mission.unit}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.impactMessage}>
-              Grâce à tous les contributeurs SeedTrade, nous créons un impact réel ! 🌍
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {Object.entries(groupedMissions).map(([category, categoryMissions]) => (
+          <View key={category} style={styles.categorySection}>
+            <Text style={styles.categoryTitle}>
+              {categoryTitles[category as keyof typeof categoryTitles]}
             </Text>
+            
+            {categoryMissions.map(renderMissionCard)}
           </View>
-        </View>
+        ))}
 
-        {/* Call to action */}
-        <View style={styles.ctaSection}>
-          <View style={styles.ctaContainer}>
-            <Text style={styles.ctaTitle}>Prêt à contribuer ?</Text>
-            <Text style={styles.ctaText}>
-              Lance ta première session et commence à avoir un impact positif dès maintenant !
-            </Text>
-            <TouchableOpacity 
-              style={styles.ctaButton}
-              onPress={() => {
-                // Navigate to home to start session
-                // This would be handled by the tab navigation
-              }}
-            >
-              <Text style={styles.ctaButtonText}>Commencer une session</Text>
-              <ChevronRight size={20} color="white" />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Votre temps de déconnexion est transformé en actions concrètes.
+            Chaque minute compte ! 🌱
+          </Text>
         </View>
       </ScrollView>
+
+      {renderMissionDetail()}
     </SafeAreaView>
   );
 }
@@ -239,223 +253,259 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    padding: 20,
+    paddingBottom: 16,
   },
-  headerTitle: {
+  title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: 'bold',
     color: colors.text,
     marginBottom: 8,
-    letterSpacing: -0.5,
   },
-  headerSubtitle: {
+  subtitle: {
     fontSize: 16,
     color: colors.textLight,
   },
-  categoriesContainer: {
-    paddingVertical: 16,
+  content: {
+    flex: 1,
+  },
+  categorySection: {
+    marginBottom: 24,
+  },
+  categoryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+    marginHorizontal: 20,
+  },
+  missionCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  activeMissionCard: {
+    borderWidth: 2,
+    borderColor: colors.success,
+  },
+  missionCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  missionCardIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  missionCardContent: {
+    flex: 1,
+  },
+  missionCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  missionCardDescription: {
+    fontSize: 14,
+    color: colors.textLight,
+  },
+  infoButton: {
+    padding: 4,
+  },
+  missionStats: {
+    flexDirection: 'row',
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 12,
+    padding: 12,
+  },
+  missionStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  missionStatValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  missionStatLabel: {
+    fontSize: 12,
+    color: colors.textLight,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  activeIndicatorSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    gap: 4,
+  },
+  activeTextSmall: {
+    fontSize: 12,
+    color: colors.success,
+    fontWeight: '600',
+  },
+  footer: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  footerText: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  categoriesScroll: {
-    paddingHorizontal: 24,
-    gap: 12,
-  },
-  categoryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 8,
-  },
-  selectedCategory: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.text,
-  },
-  selectedCategoryText: {
-    color: "white",
-  },
-  categoryBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    backgroundColor: colors.border,
-  },
-  selectedCategoryBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
-  categoryCount: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textLight,
-  },
-  selectedCategoryCount: {
-    color: "white",
-  },
-  scrollContent: {
-    paddingBottom: 120,
-  },
-  activeMissionSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  activeMissionContainer: {
-    gap: 12,
-  },
-  infoButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  infoButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.primary,
-  },
-  allMissionsSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 8,
-    letterSpacing: -0.3,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: colors.textLight,
-    marginBottom: 20,
-  },
-  missionsGrid: {
-    gap: 20,
-  },
-  missionContainer: {
-    gap: 8,
-  },
-  missionFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  missionInfoButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: colors.card,
-  },
-  missionMeta: {
-    flex: 1,
-  },
-  missionCategory: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: colors.primary,
-    textTransform: "capitalize",
-    marginBottom: 2,
-  },
-  missionProgress: {
-    fontSize: 11,
-    color: colors.textLight,
-  },
-  activeIndicator: {
+  closeButton: {
     padding: 4,
   },
-  impactSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
+  modalTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
   },
-  impactContainer: {
-    backgroundColor: colors.card,
+  placeholder: {
+    width: 32,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  missionIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  missionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  missionDescription: {
+    fontSize: 16,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  impactSection: {
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: 20,
   },
-  impactStats: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  impactDescription: {
+    fontSize: 14,
+    color: colors.textLight,
+    lineHeight: 20,
     marginBottom: 16,
   },
-  impactStat: {
-    alignItems: "center",
+  impactMetric: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 4,
   },
   impactValue: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: 'bold',
     color: colors.primary,
-    marginBottom: 4,
-    letterSpacing: -0.5,
   },
   impactLabel: {
-    fontSize: 12,
-    color: colors.textLight,
-    textAlign: "center",
-  },
-  impactMessage: {
     fontSize: 14,
-    color: colors.text,
-    textAlign: "center",
-    lineHeight: 20,
+    color: colors.textLight,
   },
-  ctaSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
+  statsSection: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
   },
-  ctaContainer: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: "center",
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  ctaTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "white",
-    marginBottom: 8,
-    letterSpacing: -0.3,
+  statLabel: {
+    fontSize: 14,
+    color: colors.textLight,
   },
-  ctaText: {
+  statValue: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 22,
+    fontWeight: '600',
+    color: colors.text,
   },
-  ctaButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  modalFooter: {
+    padding: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  selectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
     borderRadius: 12,
     gap: 8,
   },
-  ctaButtonText: {
+  selectButtonText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "white",
+    fontWeight: '600',
+    color: 'white',
+  },
+  activeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: colors.successLight,
+    borderRadius: 12,
+    gap: 8,
+  },
+  activeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.success,
   },
 });
