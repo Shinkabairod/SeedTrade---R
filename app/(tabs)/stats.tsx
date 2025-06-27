@@ -1,134 +1,312 @@
-import React from "react";
-import { StyleSheet, Text, View, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Clock, Trophy, Target, Award, TrendingUp } from "lucide-react-native";
-import { useSessionStore } from "@/store/useSessionStore";
-import colors from "@/constants/colors";
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Calendar,
+  Clock,
+  Award,
+  Target,
+  TrendingUp,
+  BarChart3,
+  TreePine,
+  Waves,
+  Recycle,
+  Flame,
+  Trophy,
+  Star,
+} from 'lucide-react-native';
+import { useSessionStore } from '@/store/useSessionStore';
+import { missions } from '@/constants/missions';
+import colors from '@/constants/colors';
+
+const { width } = Dimensions.get('window');
 
 export default function StatsScreen() {
-  const { stats } = useSessionStore();
+  const { stats, sessions, achievements } = useSessionStore();
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'all'>('week');
 
-  const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  // Calculate weekly progress
+  const weekDays = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  const maxWeeklyMinutes = Math.max(...stats.weeklyData, 1);
 
-  return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Tes Statistiques</Text>
-          <Text style={styles.subtitle}>Suis tes progrès et ton impact</Text>
-        </View>
+  // Calculate achievements progress
+  const unlockedAchievements = achievements.filter(a => a.unlockedAt);
+  const achievementProgress = achievements.map(achievement => ({
+    ...achievement,
+    percentage: Math.min((achievement.progress / achievement.target) * 100, 100),
+  }));
 
-        {/* Main Stats Cards */}
-        <View style={styles.mainStatsContainer}>
-          <View style={[styles.mainStatCard, { backgroundColor: colors.primary }]}>
-            <Clock size={32} color="white" />
-            <Text style={styles.mainStatValue}>{Math.floor(stats.totalMinutes / 60)}h</Text>
-            <Text style={styles.mainStatLabel}>Temps total</Text>
+  // Calculate mission breakdown
+  const missionBreakdown = missions.map(mission => {
+    const missionSessions = sessions.filter(
+      session => session.missionId === mission.id && session.status === 'completed'
+    );
+    
+    const totalMinutes = missionSessions.reduce((sum, session) => sum + (session.actualDuration || 0), 0);
+    const totalPoints = missionSessions.reduce((sum, session) => sum + session.points, 0);
+    
+    return {
+      mission,
+      minutes: totalMinutes,
+      sessions: missionSessions.length,
+      points: totalPoints,
+      percentage: stats.totalMinutes > 0 ? (totalMinutes / stats.totalMinutes) * 100 : 0,
+    };
+  }).sort((a, b) => b.minutes - a.minutes);
+
+  // Calculate recent activity
+  const recentSessions = sessions
+    .filter(session => session.status === 'completed')
+    .slice(0, 5)
+    .map(session => {
+      const mission = missions.find(m => m.id === session.missionId);
+      const date = new Date(session.startTime);
+      return {
+        ...session,
+        missionTitle: mission?.title || 'Mission inconnue',
+        missionColor: mission?.color || colors.primary,
+        dateString: date.toLocaleDateString('fr-FR', { 
+          day: 'numeric', 
+          month: 'short' 
+        }),
+      };
+    });
+
+  const renderWeeklyChart = () => (
+    <View style={styles.chartContainer}>
+      <Text style={styles.chartTitle}>Activité de la semaine</Text>
+      <View style={styles.weeklyChart}>
+        {weekDays.map((day, index) => {
+          const minutes = stats.weeklyData[index];
+          const height = (minutes / maxWeeklyMinutes) * 100 || 5;
+          
+          return (
+            <View key={index} style={styles.weeklyBarContainer}>
+              <View style={styles.weeklyBarBackground}>
+                <View 
+                  style={[
+                    styles.weeklyBar, 
+                    { 
+                      height: `${height}%`,
+                      backgroundColor: minutes > 0 ? colors.primary : colors.border,
+                    }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.weeklyDayLabel}>{day}</Text>
+              <Text style={styles.weeklyMinutesLabel}>{minutes}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  const renderMissionBreakdown = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Répartition par mission</Text>
+      {missionBreakdown.map(({ mission, minutes, sessions, percentage }) => (
+        <View key={mission.id} style={styles.missionBreakdownItem}>
+          <View style={styles.missionBreakdownHeader}>
+            <View style={[styles.missionBreakdownIcon, { backgroundColor: mission.color }]}>
+              <mission.icon size={16} color="white" />
+            </View>
+            <Text style={styles.missionBreakdownTitle}>{mission.title}</Text>
+            <Text style={styles.missionBreakdownPercentage}>
+              {percentage.toFixed(0)}%
+            </Text>
           </View>
           
-          <View style={[styles.mainStatCard, { backgroundColor: colors.success }]}>
-            <Trophy size={32} color="white" />
-            <Text style={styles.mainStatValue}>{stats.totalSessions}</Text>
-            <Text style={styles.mainStatLabel}>Sessions réussies</Text>
+          <View style={styles.missionBreakdownProgress}>
+            <View style={styles.missionBreakdownProgressBackground}>
+              <View 
+                style={[
+                  styles.missionBreakdownProgressBar,
+                  { 
+                    width: `${percentage}%`,
+                    backgroundColor: mission.color,
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+          
+          <View style={styles.missionBreakdownStats}>
+            <Text style={styles.missionBreakdownStat}>{sessions} sessions</Text>
+            <Text style={styles.missionBreakdownStat}>{minutes} min</Text>
           </View>
         </View>
+      ))}
+    </View>
+  );
 
-        {/* Weekly Progress Chart */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Progression cette semaine</Text>
-          <View style={styles.chartCard}>
-            <View style={styles.chart}>
-              {stats.weeklyData.map((height, index) => (
-                <View key={index} style={styles.chartColumn}>
+  const renderAchievements = () => (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Succès</Text>
+        <View style={styles.achievementsBadge}>
+          <Trophy size={16} color={colors.stats.points} />
+          <Text style={styles.achievementsBadgeText}>
+            {unlockedAchievements.length}/{achievements.length}
+          </Text>
+        </View>
+      </View>
+      
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.achievementsContainer}>
+          {achievementProgress.map((achievement) => (
+            <View key={achievement.id} style={styles.achievementCard}>
+              <View style={[
+                styles.achievementIcon,
+                { backgroundColor: achievement.unlockedAt ? colors.success : colors.border }
+              ]}>
+                <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+              </View>
+              
+              <Text style={styles.achievementTitle} numberOfLines={2}>
+                {achievement.title}
+              </Text>
+              
+              <View style={styles.achievementProgress}>
+                <View style={styles.achievementProgressBackground}>
                   <View 
                     style={[
-                      styles.chartBar,
+                      styles.achievementProgressBar,
                       { 
-                        height: `${Math.max(height, 5)}%`,
-                        backgroundColor: height > 0 ? colors.primary : colors.border
+                        width: `${achievement.percentage}%`,
+                        backgroundColor: achievement.unlockedAt ? colors.success : colors.accent,
                       }
-                    ]}
+                    ]} 
                   />
-                  <Text style={styles.chartLabel}>
-                    {weekDays[index]}
-                  </Text>
                 </View>
-              ))}
+                <Text style={styles.achievementProgressText}>
+                  {achievement.progress}/{achievement.target}
+                </Text>
+              </View>
+              
+              {achievement.unlockedAt && (
+                <View style={styles.achievementUnlocked}>
+                  <Star size={12} color={colors.success} fill={colors.success} />
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+
+  const renderRecentActivity = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Activité récente</Text>
+      {recentSessions.length > 0 ? (
+        recentSessions.map((session, index) => (
+          <View key={session.id} style={styles.activityItem}>
+            <View style={[styles.activityIcon, { backgroundColor: session.missionColor }]}>
+              <Clock size={16} color="white" />
+            </View>
+            
+            <View style={styles.activityContent}>
+              <Text style={styles.activityTitle}>{session.missionTitle}</Text>
+              <Text style={styles.activityDetails}>
+                {session.actualDuration} min • {session.points} points
+              </Text>
+            </View>
+            
+            <Text style={styles.activityDate}>{session.dateString}</Text>
+          </View>
+        ))
+      ) : (
+        <View style={styles.emptyState}>
+          <Target size={32} color={colors.textLight} />
+          <Text style={styles.emptyStateText}>
+            Aucune session terminée pour le moment
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Statistiques</Text>
+        <Text style={styles.subtitle}>Suivez votre progression</Text>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Main Stats */}
+        <View style={styles.mainStatsContainer}>
+          <View style={styles.mainStatCard}>
+            <View style={styles.mainStatIcon}>
+              <Flame size={24} color={colors.stats.streak} />
+            </View>
+            <Text style={styles.mainStatValue}>{stats.currentStreak}</Text>
+            <Text style={styles.mainStatLabel}>Série actuelle</Text>
+            <Text style={styles.mainStatSubLabel}>
+              Record: {stats.longestStreak} jours
+            </Text>
+          </View>
+          
+          <View style={styles.mainStatCard}>
+            <View style={styles.mainStatIcon}>
+              <Clock size={24} color={colors.stats.time} />
+            </View>
+            <Text style={styles.mainStatValue}>{stats.totalMinutes}</Text>
+            <Text style={styles.mainStatLabel}>Minutes totales</Text>
+            <Text style={styles.mainStatSubLabel}>
+              {Math.round(stats.totalMinutes / 60 * 10) / 10}h au total
+            </Text>
+          </View>
+        </View>
+
+        {/* Weekly Chart */}
+        {renderWeeklyChart()}
+
+        {/* Mission Breakdown */}
+        {renderMissionBreakdown()}
+
+        {/* Achievements */}
+        {renderAchievements()}
+
+        {/* Recent Activity */}
+        {renderRecentActivity()}
+
+        {/* Impact Summary */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Votre impact total</Text>
+          <View style={styles.impactSummary}>
+            <View style={styles.impactItem}>
+              <TreePine size={24} color={colors.missions.reforestation} />
+              <Text style={styles.impactValue}>{stats.treesPlanted}</Text>
+              <Text style={styles.impactLabel}>Arbres plantés</Text>
+            </View>
+            
+            <View style={styles.impactItem}>
+              <Waves size={24} color={colors.missions.ocean} />
+              <Text style={styles.impactValue}>{stats.oceanCleaned}</Text>
+              <Text style={styles.impactLabel}>kg océan nettoyé</Text>
+            </View>
+            
+            <View style={styles.impactItem}>
+              <Recycle size={24} color={colors.missions.recycling} />
+              <Text style={styles.impactValue}>{stats.materialsRecycled}</Text>
+              <Text style={styles.impactLabel}>kg recyclés</Text>
             </View>
           </View>
         </View>
 
-        {/* Detailed Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistiques détaillées</Text>
-          <View style={styles.detailedStatsContainer}>
-            <View style={styles.detailedStatCard}>
-              <View style={styles.detailedStatIcon}>
-                <Award size={20} color={colors.stats.points} />
-              </View>
-              <View style={styles.detailedStatContent}>
-                <Text style={styles.detailedStatValue}>{stats.totalPoints}</Text>
-                <Text style={styles.detailedStatLabel}>Points totaux</Text>
-              </View>
-            </View>
-
-            <View style={styles.detailedStatCard}>
-              <View style={styles.detailedStatIcon}>
-                <Target size={20} color={colors.stats.streak} />
-              </View>
-              <View style={styles.detailedStatContent}>
-                <Text style={styles.detailedStatValue}>{stats.currentStreak}</Text>
-                <Text style={styles.detailedStatLabel}>Série actuelle</Text>
-              </View>
-            </View>
-
-            <View style={styles.detailedStatCard}>
-              <View style={styles.detailedStatIcon}>
-                <TrendingUp size={20} color={colors.stats.sessions} />
-              </View>
-              <View style={styles.detailedStatContent}>
-                <Text style={styles.detailedStatValue}>{stats.longestStreak}</Text>
-                <Text style={styles.detailedStatLabel}>Meilleure série</Text>
-              </View>
-            </View>
-
-            <View style={styles.detailedStatCard}>
-              <View style={styles.detailedStatIcon}>
-                <Clock size={20} color={colors.stats.time} />
-              </View>
-              <View style={styles.detailedStatContent}>
-                <Text style={styles.detailedStatValue}>{stats.totalMinutes}</Text>
-                <Text style={styles.detailedStatLabel}>Minutes totales</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Environmental Impact */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ton impact environnemental</Text>
-          <View style={styles.impactCard}>
-            <View style={styles.impactGrid}>
-              <View style={styles.impactItem}>
-                <Text style={styles.impactEmoji}>🌳</Text>
-                <Text style={styles.impactValue}>{stats.treesPlanted}</Text>
-                <Text style={styles.impactLabel}>Arbres plantés</Text>
-              </View>
-              <View style={styles.impactItem}>
-                <Text style={styles.impactEmoji}>🌊</Text>
-                <Text style={styles.impactValue}>{stats.oceanCleaned}kg</Text>
-                <Text style={styles.impactLabel}>Océan nettoyé</Text>
-              </View>
-              <View style={styles.impactItem}>
-                <Text style={styles.impactEmoji}>♻️</Text>
-                <Text style={styles.impactValue}>{stats.materialsRecycled}kg</Text>
-                <Text style={styles.impactLabel}>Matériaux recyclés</Text>
-              </View>
-            </View>
-          </View>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Continuez ainsi ! Chaque minute compte pour un monde meilleur. 🌱
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -140,178 +318,341 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollContent: {
-    paddingBottom: 120,
-  },
   header: {
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    alignItems: "center",
+    padding: 20,
+    paddingBottom: 16,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: 'bold',
     color: colors.text,
     marginBottom: 8,
-    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
     color: colors.textLight,
-    textAlign: "center",
   },
+  content: {
+    flex: 1,
+  },
+  
+  // Main Stats
   mainStatsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 24,
-    gap: 16,
-    marginBottom: 32,
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    gap: 12,
   },
   mainStatCard: {
     flex: 1,
-    borderRadius: 24,
-    padding: 24,
-    alignItems: "center",
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 24,
-    elevation: 8,
+    backgroundColor: colors.surface,
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  mainStatIcon: {
+    marginBottom: 12,
   },
   mainStatValue: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "white",
-    marginTop: 12,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.text,
     marginBottom: 4,
-    letterSpacing: -1,
   },
   mainStatLabel: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    fontWeight: "500",
+    color: colors.textLight,
+    marginBottom: 4,
   },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 16,
-    letterSpacing: -0.3,
-  },
-  chartCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  chart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    height: 120,
-  },
-  chartColumn: {
-    flex: 1,
-    alignItems: "center",
-    height: "100%",
-    justifyContent: "flex-end",
-  },
-  chartBar: {
-    width: "60%",
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  chartLabel: {
+  mainStatSubLabel: {
     fontSize: 12,
     color: colors.textLight,
-    fontWeight: "500",
   },
-  detailedStatsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  detailedStatCard: {
-    flex: 1,
-    minWidth: "45%",
-    backgroundColor: colors.card,
+
+  // Weekly Chart
+  chartContainer: {
+    backgroundColor: colors.surface,
+    marginHorizontal: 20,
+    marginBottom: 24,
     borderRadius: 16,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
+    padding: 20,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  detailedStatIcon: {
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  weeklyChart: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: 120,
+  },
+  weeklyBarContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  weeklyBarBackground: {
+    height: 80,
+    width: '60%',
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 4,
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  weeklyBar: {
+    width: '100%',
+    borderRadius: 4,
+    minHeight: 4,
+  },
+  weeklyDayLabel: {
+    fontSize: 12,
+    color: colors.textLight,
+    marginBottom: 2,
+  },
+  weeklyMinutesLabel: {
+    fontSize: 10,
+    color: colors.textLight,
+  },
+
+  // Sections
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+
+  // Mission Breakdown
+  missionBreakdownItem: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  missionBreakdownHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  missionBreakdownIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  missionBreakdownTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  missionBreakdownPercentage: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textLight,
+  },
+  missionBreakdownProgress: {
+    marginBottom: 8,
+  },
+  missionBreakdownProgressBackground: {
+    height: 4,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+  },
+  missionBreakdownProgressBar: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  missionBreakdownStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  missionBreakdownStat: {
+    fontSize: 12,
+    color: colors.textLight,
+  },
+
+  // Achievements
+  achievementsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundLight,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  achievementsBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.stats.points,
+  },
+  achievementsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+  },
+  achievementCard: {
+    width: 120,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  achievementIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.wellness.cream,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  achievementEmoji: {
+    fontSize: 20,
+  },
+  achievementTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+    minHeight: 32,
+  },
+  achievementProgress: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  achievementProgressBackground: {
+    width: '100%',
+    height: 4,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    marginBottom: 4,
+  },
+  achievementProgressBar: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  achievementProgressText: {
+    fontSize: 10,
+    color: colors.textLight,
+  },
+  achievementUnlocked: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+
+  // Recent Activity
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
-  detailedStatContent: {
+  activityContent: {
     flex: 1,
   },
-  detailedStatValue: {
-    fontSize: 20,
-    fontWeight: "700",
+  activityTitle: {
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.text,
     marginBottom: 2,
-    letterSpacing: -0.5,
   },
-  detailedStatLabel: {
+  activityDetails: {
     fontSize: 12,
     color: colors.textLight,
-    fontWeight: "500",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
   },
-  impactCard: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
+  activityDate: {
+    fontSize: 12,
+    color: colors.textLight,
   },
-  impactGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+
+  // Impact Summary
+  impactSummary: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   impactItem: {
-    alignItems: "center",
-  },
-  impactEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
+    flex: 1,
+    alignItems: 'center',
   },
   impactValue: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "white",
+    fontWeight: 'bold',
+    color: colors.text,
+    marginTop: 8,
     marginBottom: 4,
-    letterSpacing: -0.5,
   },
   impactLabel: {
-    fontSize: 11,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    fontWeight: "500",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
+    fontSize: 12,
+    color: colors.textLight,
+    textAlign: 'center',
+  },
+
+  // Empty State
+  emptyState: {
+    alignItems: 'center',
+    padding: 32,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: colors.textLight,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+
+  // Footer
+  footer: {
+    padding: 20,
+  },
+  footerText: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
