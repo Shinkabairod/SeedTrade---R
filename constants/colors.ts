@@ -1,44 +1,56 @@
 export default {
-  // Couleurs principales modernes
-  primary: "#8B5CF6", // Violet principal
-  secondary: "#10B981", // Vert emeraude
-  accent: "#F59E0B", // Orange/ambre
+  // Couleurs principales modernes et apaisantes
+  primary: "#6B73FF", // Bleu doux moderne
+  secondary: "#9B59B6", // Violet doux
+  accent: "#FF6B6B", // Rose coral
+  
+  // Couleurs wellness
+  wellness: {
+    sage: "#A8B5A0", // Vert sauge
+    cream: "#F7F5F3", // Crème
+    sand: "#E8DDD4", // Sable
+    lavender: "#E6E6FA", // Lavande
+  },
   
   // États
-  success: "#10B981", // Vert succès
-  error: "#EF4444", // Rouge erreur
-  warning: "#F59E0B", // Orange warning
-  info: "#3B82F6", // Bleu info
+  success: "#4ECDC4", // Turquoise doux
+  error: "#FF6B6B", // Rouge coral
+  warning: "#FFD93D", // Jaune doux
+  info: "#6B73FF", // Bleu principal
   
   // Backgrounds et surfaces
-  background: "#F9FAFB", // Gris très clair
+  background: "#FEFEFE", // Blanc très légèrement cassé
+  surface: "#FFFFFF", // Blanc pur
   card: "#FFFFFF", // Blanc pur
   
   // Textes
-  text: "#1F2937", // Gris foncé
-  textLight: "#6B7280", // Gris moyen
+  text: "#2D3748", // Gris foncé doux
+  textLight: "#718096", // Gris moyen
+  textMuted: "#A0AEC0", // Gris clair
   
   // Bordures et états inactifs
-  border: "#E5E7EB", // Gris bordure
-  inactive: "#D1D5DB", // Gris inactif
+  border: "#E2E8F0", // Gris bordure très clair
+  inactive: "#CBD5E0", // Gris inactif
   
   // Overlays et ombres
-  overlay: "rgba(0, 0, 0, 0.5)",
-  shadow: "rgba(0, 0, 0, 0.1)",
+  overlay: "rgba(45, 55, 72, 0.4)",
+  shadow: "rgba(0, 0, 0, 0.04)",
+  shadowMedium: "rgba(0, 0, 0, 0.08)",
+  shadowStrong: "rgba(0, 0, 0, 0.12)",
 
   // Couleurs spécifiques pour les missions
   missions: {
-    tree: "#10B981", // Vert pour les arbres
-    water: "#3B82F6", // Bleu pour l'eau
-    education: "#F59E0B", // Orange pour l'éducation
-    health: "#EF4444", // Rouge pour la santé
+    tree: "#4ECDC4", // Turquoise pour les arbres
+    water: "#6B73FF", // Bleu pour l'eau
+    education: "#FFD93D", // Jaune pour l'éducation
+    health: "#FF6B6B", // Rose pour la santé
   },
 
   // Couleurs pour les statistiques
   stats: {
-    points: "#8B5CF6",
-    sessions: "#10B981", 
-    streak: "#F59E0B",
-    time: "#3B82F6",
+    points: "#6B73FF",
+    sessions: "#4ECDC4", 
+    streak: "#FFD93D",
+    time: "#9B59B6",
   }
 };

@@ -57,7 +57,7 @@ export default function Button({
       style={getButtonStyle()}
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={disabled ? 1 : 0.8}
+      activeOpacity={disabled ? 1 : 0.9}
     >
       <Text style={getTextStyle()}>{title}</Text>
     </TouchableOpacity>
@@ -69,28 +69,28 @@ const styles = StyleSheet.create({
   button: {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   
   // Size styles
   small: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
   medium: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
   },
   large: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingHorizontal: 32,
+    paddingVertical: 18,
+    borderRadius: 20,
   },
   
   // Variant styles
@@ -102,11 +102,15 @@ const styles = StyleSheet.create({
   },
   outline: {
     backgroundColor: "transparent",
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.primary,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   ghost: {
-    backgroundColor: "transparent",
+    backgroundColor: colors.wellness.lavender,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   
   // Disabled state
@@ -120,6 +124,7 @@ const styles = StyleSheet.create({
   text: {
     fontWeight: "600",
     textAlign: "center",
+    letterSpacing: -0.3,
   },
   
   // Text size styles
@@ -149,6 +154,6 @@ const styles = StyleSheet.create({
   
   // Disabled text
   disabledText: {
-    color: colors.textLight,
+    color: colors.textMuted,
   },
 });

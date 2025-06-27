@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Play, Target, Heart } from "lucide-react-native";
+import { Play, Target, Heart, Sparkles } from "lucide-react-native";
 import { useSessionStore } from "@/store/useSessionStore";
 import { missions } from "@/constants/missions";
 import colors from "@/constants/colors";
@@ -41,12 +41,14 @@ export default function OnboardingScreen() {
               contentFit="cover"
             />
             <LinearGradient
-              colors={["transparent", "rgba(247, 250, 252, 0.8)", colors.background]}
+              colors={["transparent", "rgba(254, 254, 254, 0.8)", colors.background]}
               style={styles.gradient}
             />
             <View style={styles.contentContainer}>
               <View style={styles.logoContainer}>
-                <Text style={styles.logoText}>🌱</Text>
+                <View style={styles.logoIcon}>
+                  <Sparkles size={32} color={colors.primary} />
+                </View>
                 <Text style={styles.appName}>SeedTrade</Text>
               </View>
               <Text style={styles.title}>Ton calme a de la valeur</Text>
@@ -55,15 +57,21 @@ export default function OnboardingScreen() {
               </Text>
               <View style={styles.featuresContainer}>
                 <View style={styles.feature}>
-                  <Play size={24} color={colors.primary} />
+                  <View style={styles.featureIcon}>
+                    <Play size={20} color={colors.primary} />
+                  </View>
                   <Text style={styles.featureText}>Sessions de méditation</Text>
                 </View>
                 <View style={styles.feature}>
-                  <Target size={24} color={colors.secondary} />
+                  <View style={styles.featureIcon}>
+                    <Target size={20} color={colors.secondary} />
+                  </View>
                   <Text style={styles.featureText}>Impact mesurable</Text>
                 </View>
                 <View style={styles.feature}>
-                  <Heart size={24} color={colors.accent} />
+                  <View style={styles.featureIcon}>
+                    <Heart size={20} color={colors.accent} />
+                  </View>
                   <Text style={styles.featureText}>Contribution sociale</Text>
                 </View>
               </View>
@@ -230,23 +238,30 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 40,
   },
-  logoText: {
-    fontSize: 48,
-    marginBottom: 8,
+  logoIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.wellness.lavender,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
   appName: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: colors.primary,
+    letterSpacing: -1,
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: colors.text,
     textAlign: "center",
     marginBottom: 16,
+    letterSpacing: -0.5,
   },
   description: {
     fontSize: 16,
@@ -262,29 +277,43 @@ const styles = StyleSheet.create({
   feature: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 16,
+    gap: 16,
+    padding: 20,
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 16,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  featureIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.wellness.cream,
+    alignItems: "center",
+    justifyContent: "center",
   },
   featureText: {
     fontSize: 16,
     color: colors.text,
-    fontWeight: "500",
+    fontWeight: "600",
+    letterSpacing: -0.3,
   },
   stepsContainer: {
     width: "100%",
-    gap: 24,
+    gap: 32,
   },
   step: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 16,
+    gap: 20,
   },
   stepNumber: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -292,7 +321,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     color: "white",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   stepContent: {
     flex: 1,
@@ -302,11 +331,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.text,
     marginBottom: 8,
+    letterSpacing: -0.3,
   },
   stepDescription: {
     fontSize: 16,
     color: colors.textLight,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   missionsContainer: {
     width: "100%",
@@ -315,9 +345,14 @@ const styles = StyleSheet.create({
   },
   missionItem: {
     height: 120,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: "hidden",
     position: "relative",
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   missionImage: {
     width: "100%",
@@ -335,11 +370,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: 20,
   },
   missionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "white",
     marginBottom: 4,
   },
@@ -351,30 +386,31 @@ const styles = StyleSheet.create({
   missionPoints: {
     fontSize: 12,
     color: "rgba(255,255,255,0.8)",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   infoBox: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.wellness.cream,
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.wellness.sand,
     width: "100%",
   },
   infoText: {
     fontSize: 14,
     color: colors.text,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 22,
+    fontWeight: "500",
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 32,
   },
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: 32,
   },
   paginationDot: {
     width: 8,
@@ -385,7 +421,7 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     backgroundColor: colors.primary,
-    width: 20,
+    width: 24,
   },
   button: {
     width: "100%",

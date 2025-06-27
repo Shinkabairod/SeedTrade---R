@@ -12,7 +12,6 @@ type MissionCardProps = {
 };
 
 const { width } = Dimensions.get("window");
-const cardWidth = width * 0.85;
 
 export default function MissionCard({ mission, isActive, onPress }: MissionCardProps) {
   const progress = mission.current / mission.target;
@@ -21,7 +20,7 @@ export default function MissionCard({ mission, isActive, onPress }: MissionCardP
     <TouchableOpacity 
       style={[styles.container, isActive && styles.activeContainer]} 
       onPress={onPress}
-      activeOpacity={0.9}
+      activeOpacity={0.95}
     >
       <Image
         source={{ uri: mission.image }}
@@ -30,11 +29,14 @@ export default function MissionCard({ mission, isActive, onPress }: MissionCardP
         transition={300}
       />
       <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.7)"]}
+        colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.7)"]}
         style={styles.gradient}
       />
       <View style={styles.content}>
-        <Text style={styles.title}>{mission.title}</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>{mission.title}</Text>
+          {isActive && <View style={styles.activeBadge} />}
+        </View>
         <Text style={styles.description} numberOfLines={2}>
           {mission.description}
         </Text>
@@ -51,13 +53,15 @@ export default function MissionCard({ mission, isActive, onPress }: MissionCardP
             {mission.current.toLocaleString()} / {mission.target.toLocaleString()} {mission.unit}
           </Text>
         </View>
-        <View style={styles.categoryContainer}>
-          <View style={[styles.categoryBadge, { backgroundColor: mission.color }]}>
-            <Text style={styles.categoryText}>{mission.pointsPerMinute} pts/min</Text>
+        <View style={styles.footer}>
+          <View style={[styles.pointsBadge, { backgroundColor: mission.color }]}>
+            <Text style={styles.pointsText}>{mission.pointsPerMinute} pts/min</Text>
           </View>
+          <Text style={styles.progressPercentage}>
+            {Math.round(progress * 100)}%
+          </Text>
         </View>
       </View>
-      {isActive && <View style={styles.activeBadge} />}
     </TouchableOpacity>
   );
 }
@@ -65,22 +69,23 @@ export default function MissionCard({ mission, isActive, onPress }: MissionCardP
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    height: 200,
-    borderRadius: 16,
+    height: 220,
+    borderRadius: 20,
     overflow: "hidden",
     backgroundColor: colors.card,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 4,
   },
   activeContainer: {
     borderWidth: 2,
     borderColor: colors.primary,
+    shadowColor: colors.primary,
     shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 20,
+    elevation: 8,
   },
   image: {
     width: "100%",
@@ -91,70 +96,82 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: "70%",
+    height: "75%",
   },
   content: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: 20,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  progressContainer: {
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
-  progressBar: {
-    height: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 2,
-    marginBottom: 6,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "white",
-    borderRadius: 2,
-  },
-  progressText: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.9)",
-    fontWeight: "500",
-  },
-  categoryContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  categoryText: {
-    fontSize: 12,
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
     color: "white",
-    fontWeight: "600",
+    flex: 1,
+    letterSpacing: -0.5,
   },
   activeBadge: {
-    position: "absolute",
-    top: 12,
-    right: 12,
     width: 12,
     height: 12,
     borderRadius: 6,
     backgroundColor: colors.success,
     borderWidth: 2,
     borderColor: "white",
+    marginLeft: 8,
+    marginTop: 2,
+  },
+  description: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  progressContainer: {
+    marginBottom: 12,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    borderRadius: 3,
+    marginBottom: 8,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "white",
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "500",
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  pointsBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  pointsText: {
+    fontSize: 12,
+    color: "white",
+    fontWeight: "700",
+  },
+  progressPercentage: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
   },
 });

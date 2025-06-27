@@ -7,11 +7,13 @@ import colors from "@/constants/colors";
 
 function TabBarIcon({ Icon, focused }: { Icon: any; focused: boolean }) {
   return (
-    <Icon
-      size={24}
-      color={focused ? colors.primary : colors.textLight}
-      strokeWidth={focused ? 2.5 : 2}
-    />
+    <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+      <Icon
+        size={22}
+        color={focused ? colors.primary : colors.textMuted}
+        strokeWidth={focused ? 2.5 : 2}
+      />
+    </View>
   );
 }
 
@@ -28,7 +30,7 @@ function SessionButton() {
         activeOpacity={0.8}
       >
         <View style={styles.sessionButtonInner}>
-          <Play size={28} color="white" fill="white" />
+          <Play size={24} color="white" fill="white" />
         </View>
       </TouchableOpacity>
     </View>
@@ -42,7 +44,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
         tabBarBackground: () => (
@@ -50,7 +52,7 @@ export default function TabLayout() {
             <BlurView 
               intensity={100} 
               style={StyleSheet.absoluteFill}
-              tint="light"
+              tint="extraLight"
             />
           ) : (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]} />
@@ -103,18 +105,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === 'ios' ? 90 : 80,
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.8)' : colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingHorizontal: 12,
-    paddingBottom: Platform.OS === 'ios' ? 25 : 15,
+    height: Platform.OS === 'ios' ? 88 : 78,
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.95)' : colors.surface,
+    borderTopWidth: 0,
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 18,
     paddingTop: 12,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    elevation: 0,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -122,41 +123,48 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   tabBarLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconContainerActive: {
+    backgroundColor: colors.wellness.lavender,
   },
   sessionButtonContainer: {
     position: "absolute",
-    top: -32,
+    top: -28,
     alignSelf: "center",
     zIndex: 10,
   },
   sessionButton: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 10,
-    // Effet de glow moderne
+    elevation: 8,
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: colors.surface,
   },
   sessionButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    // Gradient effect simulé avec une bordure
-    borderWidth: 2,
-    borderColor: colors.primaryLight,
   },
 });
