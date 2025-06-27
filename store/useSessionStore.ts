@@ -43,6 +43,7 @@ interface SessionStore {
   sessions: Session[];
   achievements: Achievement[];
   activeMissionId: string;
+  hasCompletedOnboarding: boolean;
   
   // UI state
   showSessionResult: boolean;
@@ -58,6 +59,7 @@ interface SessionStore {
   setShowSessionResult: (show: boolean) => void;
   setNotifications: (enabled: boolean) => void;
   setUserName: (name: string) => void;
+  completeOnboarding: () => void;
   resetStore: () => void;
   updateAchievementProgress: (achievementId: string, progress: number) => void;
   unlockAchievement: (achievementId: string) => void;
@@ -134,6 +136,7 @@ export const useSessionStore = create<SessionStore>()(
       sessions: [],
       achievements: initialAchievements,
       activeMissionId: 'reforestation',
+      hasCompletedOnboarding: false,
       showSessionResult: false,
       lastSessionSuccess: false,
       notifications: true,
@@ -199,12 +202,17 @@ export const useSessionStore = create<SessionStore>()(
         set({ userName: name });
       },
 
+      completeOnboarding: () => {
+        set({ hasCompletedOnboarding: true });
+      },
+
       resetStore: () => {
         set({
           stats: initialStats,
           sessions: [],
           achievements: initialAchievements,
           activeMissionId: 'reforestation',
+          hasCompletedOnboarding: false,
           showSessionResult: false,
           lastSessionSuccess: false,
           notifications: true,
@@ -240,6 +248,7 @@ export const useSessionStore = create<SessionStore>()(
         sessions: state.sessions,
         achievements: state.achievements,
         activeMissionId: state.activeMissionId,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
         notifications: state.notifications,
         userName: state.userName,
       }),

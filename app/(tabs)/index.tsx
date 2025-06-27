@@ -101,7 +101,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
-            onPress={() => router.push("/settings")}
+            onPress={() => Alert.alert("Paramètres", "Fonctionnalité à venir")}
           >
             <Settings size={20} color={colors.text} />
           </TouchableOpacity>

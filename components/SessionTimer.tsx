@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, Text, View, Animated, Dimensions } from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Mission } from "@/constants/missions";
 import colors from "@/constants/colors";
@@ -110,18 +109,9 @@ export default function SessionTimer({ duration, mission, onComplete, onExit }: 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       {/* Background */}
-      <Image 
-        source={{ uri: mission.image }}
-        style={styles.backgroundImage}
-        contentFit="cover"
-      />
       <LinearGradient
-        colors={[
-          'rgba(0,0,0,0.3)',
-          'rgba(0,0,0,0.6)',
-          'rgba(0,0,0,0.8)'
-        ]}
-        style={styles.overlay}
+        colors={[mission.color + '40', mission.color + '80', mission.color]}
+        style={styles.backgroundGradient}
       />
       
       {/* Main content */}
@@ -191,12 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.primary,
   },
-  backgroundImage: {
-    position: 'absolute',
-    width: width,
-    height: height,
-  },
-  overlay: {
+  backgroundGradient: {
     position: 'absolute',
     width: width,
     height: height,

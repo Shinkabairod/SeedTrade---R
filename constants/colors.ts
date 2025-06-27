@@ -1,54 +1,51 @@
 export default {
   // Base colors
-  primary: '#6366f1',
-  secondary: '#8b5cf6',
-  accent: '#06b6d4',
-  
-  // Text colors
-  text: '#1f2937',
-  textLight: '#6b7280',
+  primary: '#6366F1',
+  secondary: '#8B5CF6',
+  accent: '#EC4899',
   
   // Background colors
-  background: '#f9fafb',
-  backgroundLight: '#f3f4f6',
-  card: '#ffffff',
-  surface: '#ffffff',
+  background: '#FEFEFE',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  
+  // Text colors
+  text: '#1F2937',
+  textLight: '#6B7280',
+  textMuted: '#9CA3AF',
   
   // Border colors
-  border: '#e5e7eb',
-  
-  // Status colors
-  success: '#10b981',
-  successLight: '#d1fae5',
-  warning: '#f59e0b',
-  error: '#ef4444',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
   
   // Shadow colors
   shadow: 'rgba(0, 0, 0, 0.05)',
   shadowMedium: 'rgba(0, 0, 0, 0.1)',
+  shadowDark: 'rgba(0, 0, 0, 0.15)',
+  
+  // Status colors
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6',
+  
+  // Inactive state
+  inactive: '#D1D5DB',
+  
+  // Wellness theme colors
+  wellness: {
+    cream: '#FEF7ED',
+    sand: '#FED7AA',
+    lavender: '#EDE9FE',
+    mint: '#ECFDF5',
+    sage: '#F0FDF4',
+  },
   
   // Stats colors
   stats: {
-    points: '#f59e0b',
-    time: '#06b6d4',
-    streak: '#ef4444',
-    sessions: '#8b5cf6',
-  },
-  
-  // Mission colors
-  missions: {
-    reforestation: '#10b981',
-    ocean: '#3b82f6',
-    recycling: '#8b5cf6',
-    education: '#f59e0b',
-    social: '#ef4444',
-  },
-  
-  // Wellness colors
-  wellness: {
-    lavender: '#e0e7ff',
-    cream: '#fef3c7',
-    mint: '#d1fae5',
-    peach: '#fed7d7',
+    points: '#F59E0B',
+    time: '#3B82F6',
+    streak: '#EF4444',
+    sessions: '#8B5CF6',
   },
 };

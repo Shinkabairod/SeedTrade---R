@@ -2,7 +2,6 @@ import React from "react";
 import { StyleSheet, Text, View, Dimensions, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Play, Target, Heart, Sparkles } from "lucide-react-native";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -22,7 +21,7 @@ export default function OnboardingScreen() {
       router.replace(`/onboarding/${screenNumber + 1}`);
     } else {
       completeOnboarding();
-      router.replace("/(tabs)/home");
+      router.replace("/(tabs)");
     }
   };
 
@@ -35,22 +34,22 @@ export default function OnboardingScreen() {
       case 1:
         return (
           <View style={styles.screenContainer}>
-            <Image
-              source={{ uri: "https://images.unsplash.com/photo-1516410529446-2c777cb7366d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80" }}
-              style={styles.welcomeImage}
-              contentFit="cover"
-            />
-            <LinearGradient
-              colors={["transparent", "rgba(254, 254, 254, 0.8)", colors.background]}
-              style={styles.gradient}
-            />
-            <View style={styles.contentContainer}>
-              <View style={styles.logoContainer}>
-                <View style={styles.logoIcon}>
-                  <Sparkles size={32} color={colors.primary} />
+            <View style={styles.heroImageContainer}>
+              <LinearGradient
+                colors={[colors.primary, colors.secondary]}
+                style={styles.heroGradient}
+              />
+              <View style={styles.heroContent}>
+                <View style={styles.logoContainer}>
+                  <View style={styles.logoIcon}>
+                    <Sparkles size={32} color="white" />
+                  </View>
+                  <Text style={styles.appName}>SeedTrade</Text>
                 </View>
-                <Text style={styles.appName}>SeedTrade</Text>
               </View>
+            </View>
+            
+            <View style={styles.contentContainer}>
               <Text style={styles.title}>Ton calme a de la valeur</Text>
               <Text style={styles.description}>
                 Transforme le temps passé loin de ton téléphone en actions positives réelles pour la planète et la société.
@@ -145,14 +144,9 @@ export default function OnboardingScreen() {
                     style={styles.missionItem}
                     onPress={() => handleSelectMission(mission.id)}
                   >
-                    <Image 
-                      source={{ uri: mission.image }}
-                      style={styles.missionImage}
-                      contentFit="cover"
-                    />
                     <LinearGradient
-                      colors={["transparent", "rgba(0,0,0,0.7)"]}
-                      style={styles.missionOverlay}
+                      colors={[mission.color + '20', mission.color + '40']}
+                      style={styles.missionGradient}
                     />
                     <View style={styles.missionContent}>
                       <Text style={styles.missionTitle}>{mission.title}</Text>
@@ -218,33 +212,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
-  welcomeImage: {
-    position: "absolute",
-    width: width,
-    height: height * 0.6,
-    top: 0,
+  heroImageContainer: {
+    width: width - 48,
+    height: height * 0.4,
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginBottom: 40,
   },
-  gradient: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: height * 0.7,
+  heroGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  contentContainer: {
-    width: "100%",
-    alignItems: "center",
-    marginTop: height * 0.3,
+  heroContent: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 40,
   },
   logoIcon: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.wellness.lavender,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -252,8 +246,12 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 32,
     fontWeight: "700",
-    color: colors.primary,
+    color: "white",
     letterSpacing: -1,
+  },
+  contentContainer: {
+    width: "100%",
+    alignItems: "center",
   },
   title: {
     fontSize: 28,
@@ -354,16 +352,8 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  missionImage: {
-    width: "100%",
-    height: "100%",
-  },
-  missionOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "100%",
+  missionGradient: {
+    flex: 1,
   },
   missionContent: {
     position: "absolute",
@@ -375,17 +365,17 @@ const styles = StyleSheet.create({
   missionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "white",
+    color: colors.text,
     marginBottom: 4,
   },
   missionDescription: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.9)",
+    color: colors.textLight,
     marginBottom: 8,
   },
   missionPoints: {
     fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   infoBox: {

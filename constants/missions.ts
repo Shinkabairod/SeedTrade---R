@@ -1,83 +1,94 @@
-import { TreePine, Waves, Recycle, BookOpen, Users } from 'lucide-react-native';
-
 export interface Mission {
   id: string;
   title: string;
   description: string;
-  detailedDescription: string;
-  impactDescription: string;
-  icon: any;
-  color: string;
-  category: 'environment' | 'social' | 'education';
+  image: string;
   pointsPerMinute: number;
   unit: string;
-  image: string;
+  color: string;
+  impact: {
+    title: string;
+    description: string;
+  };
 }
 
 export const missions: Mission[] = [
   {
     id: 'reforestation',
     title: 'Reforestation',
-    description: 'Plante des arbres virtuellement',
-    detailedDescription: 'Chaque minute de méditation contribue à la plantation d\'arbres réels dans des zones déforestées. Ton calme aide à restaurer les forêts du monde entier.',
-    impactDescription: 'Tes sessions financent la plantation d\'arbres réels via nos partenaires environnementaux.',
-    icon: TreePine,
-    color: '#22c55e',
-    category: 'environment',
+    description: 'Aide à planter des arbres et restaurer les forêts dégradées',
+    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80',
     pointsPerMinute: 10,
-    unit: 'arbres plantés',
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop',
+    unit: 'arbres',
+    color: '#10B981',
+    impact: {
+      title: 'Arbres plantés',
+      description: 'Chaque minute de méditation contribue à planter des arbres réels'
+    }
   },
   {
     id: 'ocean',
-    title: 'Océans propres',
-    description: 'Nettoie les océans',
-    detailedDescription: 'Tes moments de tranquillité contribuent au nettoyage des océans. Chaque session aide à financer la collecte de déchets plastiques.',
-    impactDescription: 'Ton temps de méditation finance directement des opérations de nettoyage océanique.',
-    icon: Waves,
-    color: '#3b82f6',
-    category: 'environment',
+    title: 'Protection océanique',
+    description: 'Contribue au nettoyage des océans et à la protection marine',
+    image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
     pointsPerMinute: 8,
-    unit: 'kg de déchets',
-    image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop',
+    unit: 'kg nettoyés',
+    color: '#3B82F6',
+    impact: {
+      title: 'Océan nettoyé',
+      description: 'Tes sessions financent le retrait de déchets plastiques'
+    }
   },
   {
     id: 'recycling',
     title: 'Recyclage',
-    description: 'Recycle des matériaux',
-    detailedDescription: 'Transforme ton temps de calme en actions de recyclage. Tes sessions financent des programmes de recyclage innovants.',
-    impactDescription: 'Chaque minute contribue au financement de centres de recyclage et d\'initiatives zéro déchet.',
-    icon: Recycle,
-    color: '#8b5cf6',
-    category: 'environment',
+    description: 'Soutiens les programmes de recyclage et économie circulaire',
+    image: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
     pointsPerMinute: 12,
     unit: 'kg recyclés',
-    image: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&h=600&fit=crop',
+    color: '#8B5CF6',
+    impact: {
+      title: 'Matériaux recyclés',
+      description: 'Favorise la transformation de déchets en ressources'
+    }
   },
   {
     id: 'education',
     title: 'Éducation',
-    description: 'Soutiens l\'éducation',
-    detailedDescription: 'Ton temps de méditation aide à financer l\'éducation dans les régions défavorisées. Chaque session contribue à l\'accès à l\'éducation.',
-    impactDescription: 'Tes sessions financent des programmes éducatifs et l\'accès aux ressources pédagogiques.',
-    icon: BookOpen,
-    color: '#f59e0b',
-    category: 'education',
-    pointsPerMinute: 9,
-    unit: 'heures d\'éducation',
-    image: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=800&h=600&fit=crop',
+    description: 'Finance l\'accès à l\'éducation dans les communautés défavorisées',
+    image: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+    pointsPerMinute: 15,
+    unit: 'heures cours',
+    color: '#F59E0B',
+    impact: {
+      title: 'Heures d\'enseignement',
+      description: 'Offre des opportunités éducatives aux enfants'
+    }
   },
   {
-    id: 'community',
-    title: 'Aide communautaire',
-    description: 'Aide les communautés',
-    detailedDescription: 'Tes moments de paix contribuent à des projets communautaires locaux. Chaque session aide à financer des initiatives sociales.',
-    impactDescription: 'Ton temps de méditation soutient des projets communautaires et des initiatives d\'entraide.',
-    icon: Users,
-    color: '#ec4899',
-    category: 'social',
-    pointsPerMinute: 11,
-    unit: 'projets soutenus',
-    image: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop',
+    id: 'clean_water',
+    title: 'Eau potable',
+    description: 'Améliore l\'accès à l\'eau potable dans les régions en besoin',
+    image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+    pointsPerMinute: 6,
+    unit: 'litres',
+    color: '#06B6D4',
+    impact: {
+      title: 'Eau purifiée',
+      description: 'Fournit de l\'eau propre aux communautés'
+    }
   },
+  {
+    id: 'renewable_energy',
+    title: 'Énergie renouvelable',
+    description: 'Soutiens le développement d\'énergies propres et durables',
+    image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+    pointsPerMinute: 9,
+    unit: 'kWh verts',
+    color: '#84CC16',
+    impact: {
+      title: 'Énergie verte',
+      description: 'Contribue à la transition énergétique'
+    }
+  }
 ];
