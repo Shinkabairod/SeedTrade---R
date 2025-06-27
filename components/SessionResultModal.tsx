@@ -1,28 +1,29 @@
-import React, { useEffect, useRef } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  Modal, 
-  Animated, 
-  Share,
-  Alert,
-  Platform
+import React from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
 } from 'react-native';
-import { CheckCircle, Clock, Share2, RotateCcw } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { CheckCircle, XCircle, Award, Zap } from 'lucide-react-native';
 import colors from '@/constants/colors';
 import { Mission } from '@/constants/missions';
+import Button from './Button';
 
-type SessionResultModalProps = {
+const { width } = Dimensions.get('window');
+
+interface SessionResultModalProps {
   visible: boolean;
   onClose: () => void;
   success: boolean;
-  sessionTime: number;
+  sessionTime: number; // in seconds
   mission: Mission;
   earnedPoints: number;
   impactAmount: number;
-};
+}
 
 export default function SessionResultModal({
   visible,
@@ -31,161 +32,88 @@ export default function SessionResultModal({
   sessionTime,
   mission,
   earnedPoints,
-  impactAmount
+  impactAmount,
 }: SessionResultModalProps) {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      fadeAnim.setValue(0);
-      scaleAnim.setValue(0.8);
-    }
-  }, [visible]);
-
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleShare = async () => {
-    try {
-      const message = success 
-        ? `🎯 Je viens de terminer une session de ${formatTime(sessionTime)} avec SeedTrade !\n\n✅ ${earnedPoints} points gagnés\n🌱 ${impactAmount} ${mission.unit}\n\nChaque minute compte pour un monde meilleur ! #SeedTrade`
-        : `🧘‍♂️ J'ai pris ${formatTime(sessionTime)} pour me concentrer avec SeedTrade.\n\nChaque moment de calme compte ! #SeedTrade #Mindfulness`;
-        
-      if (Platform.OS === 'web') {
-        // Web fallback
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(message);
-          Alert.alert('Copié !', 'Message copié dans le presse-papier');
-        }
-      } else {
-        await Share.share({ message });
-      }
-    } catch (error) {
-      Alert.alert('Erreur', 'Impossible de partager pour le moment.');
-    }
-  };
-
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       onRequestClose={onClose}
     >
-      <Animated.View 
-        style={[styles.overlay, { opacity: fadeAnim }]}
-      >
-        <Animated.View 
-          style={[
-            styles.container,
-            {
-              transform: [{ scale: scaleAnim }]
-            }
-          ]}
-        >
-          {/* Icon */}
-          <View style={[
-            styles.iconContainer,
-            { backgroundColor: success ? colors.success : colors.warning }
-          ]}>
-            {success ? (
-              <CheckCircle size={48} color="white" />
-            ) : (
-              <Clock size={48} color="white" />
-            )}
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>
-            {success ? 'Félicitations ! 🎉' : 'Session terminée 👍'}
-          </Text>
-
-          {/* Description */}
-          <Text style={styles.description}>
-            {success 
-              ? `Tu as gagné ${earnedPoints} points et contribué à ${impactAmount} ${mission.unit} !`
-              : 'Chaque effort compte ! Continue comme ça.'
-            }
-          </Text>
-
-          {/* Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{formatTime(sessionTime)}</Text>
-              <Text style={styles.statLabel}>Temps</Text>
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <LinearGradient
+            colors={success ? [colors.success, colors.primary] : [colors.error, colors.warning]}
+            style={styles.header}
+          >
+            <View style={styles.iconContainer}>
+              {success ? (
+                <CheckCircle size={48} color="white" />
+              ) : (
+                <XCircle size={48} color="white" />
+              )}
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{earnedPoints}</Text>
-              <Text style={styles.statLabel}>Points</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{impactAmount}</Text>
-              <Text style={styles.statLabel}>{mission.unit}</Text>
-            </View>
-          </View>
-
-          {/* Mission info */}
-          <View style={styles.missionContainer}>
-            <Text style={styles.missionTitle}>{mission.title}</Text>
-            <Text style={styles.missionDescription}>
+            <Text style={styles.title}>
+              {success ? 'Bravo !' : 'Session interrompue'}
+            </Text>
+            <Text style={styles.subtitle}>
               {success 
-                ? `Tu as contribué à ${impactAmount} ${mission.unit} !`
-                : 'Chaque minute compte pour un monde meilleur.'
+                ? 'Tu as terminé ta session avec succès'
+                : 'Ce n\'est pas grave, tu peux réessayer'
               }
             </Text>
-          </View>
+          </LinearGradient>
 
-          {/* Actions */}
-          <View style={styles.actionsContainer}>
-            {success && (
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.shareButton]}
-                onPress={handleShare}
-              >
-                <Share2 size={18} color="white" />
-                <Text style={styles.shareButtonText}>Partager</Text>
-              </TouchableOpacity>
-            )}
-            
-            <TouchableOpacity 
-              style={[
-                styles.actionButton, 
-                styles.continueButton,
-                !success && styles.fullWidthButton
-              ]}
-              onPress={onClose}
-            >
-              <Text style={styles.continueButtonText}>Continuer</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Motivation */}
-          {success && (
-            <View style={styles.motivationContainer}>
-              <Text style={styles.motivationText}>
-                🔥 Reviens demain pour maintenir ta série !
-              </Text>
+          <View style={styles.content}>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{formatTime(sessionTime)}</Text>
+                <Text style={styles.statLabel}>Temps passé</Text>
+              </View>
+              
+              {success && (
+                <>
+                  <View style={styles.statItem}>
+                    <View style={styles.statValueContainer}>
+                      <Zap size={20} color={colors.stats.points} />
+                      <Text style={styles.statValue}>{earnedPoints}</Text>
+                    </View>
+                    <Text style={styles.statLabel}>Points gagnés</Text>
+                  </View>
+                  
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{impactAmount}</Text>
+                    <Text style={styles.statLabel}>{mission.unit}</Text>
+                  </View>
+                </>
+              )}
             </View>
-          )}
-        </Animated.View>
-      </Animated.View>
+
+            {success && (
+              <View style={styles.impactContainer}>
+                <Award size={24} color={colors.primary} />
+                <Text style={styles.impactText}>
+                  Tu as contribué à {mission.impact.title.toLowerCase()}
+                </Text>
+              </View>
+            )}
+
+            <Button
+              title="Continuer"
+              onPress={onClose}
+              size="large"
+              style={styles.button}
+            />
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -193,134 +121,89 @@ export default function SessionResultModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    alignItems: 'center',
+    padding: 24,
   },
   container: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 32,
-    width: '100%',
+    width: width - 48,
     maxWidth: 400,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: colors.shadowDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
     shadowRadius: 24,
-    elevation: 12,
+    elevation: 8,
+  },
+  header: {
+    padding: 32,
+    alignItems: 'center',
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
+    color: 'white',
+    marginBottom: 8,
     textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: -0.5,
   },
-  description: {
+  subtitle: {
     fontSize: 16,
-    color: colors.textLight,
+    color: 'rgba(255,255,255,0.9)',
     textAlign: 'center',
-    marginBottom: 24,
     lineHeight: 24,
+  },
+  content: {
+    padding: 24,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '100%',
     marginBottom: 24,
   },
   statItem: {
     alignItems: 'center',
   },
+  statValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.primary,
+    color: colors.text,
     marginBottom: 4,
-    letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 12,
     color: colors.textLight,
     fontWeight: '500',
-    letterSpacing: 0.5,
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  missionContainer: {
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: colors.background,
-    borderRadius: 16,
-    width: '100%',
-    marginBottom: 24,
-  },
-  missionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-    letterSpacing: -0.3,
-  },
-  missionDescription: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-    marginBottom: 16,
-  },
-  actionButton: {
-    flex: 1,
+  impactContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 16,
     gap: 8,
+    backgroundColor: colors.wellness.cream,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 24,
   },
-  fullWidthButton: {
-    flex: 1,
-  },
-  shareButton: {
-    backgroundColor: colors.secondary,
-  },
-  shareButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  continueButton: {
-    backgroundColor: colors.primary,
-  },
-  continueButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  motivationContainer: {
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    width: '100%',
-  },
-  motivationText: {
+  impactText: {
     fontSize: 14,
-    color: colors.accent,
+    color: colors.text,
+    fontWeight: '600',
     textAlign: 'center',
-    fontWeight: '500',
+  },
+  button: {
+    width: '100%',
   },
 });

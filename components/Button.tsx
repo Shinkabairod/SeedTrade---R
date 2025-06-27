@@ -1,99 +1,57 @@
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, ViewStyle, TextStyle } from "react-native";
-import colors from "@/constants/colors";
+import React from 'react';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import colors from '@/constants/colors';
 
-type ButtonSize = "small" | "medium" | "large";
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost";
-
-type ButtonProps = {
+interface ButtonProps {
   title: string;
   onPress: () => void;
-  size?: ButtonSize;
-  variant?: ButtonVariant;
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
-};
+}
 
 export default function Button({
   title,
   onPress,
-  size = "medium",
-  variant = "primary",
+  variant = 'primary',
+  size = 'medium',
   disabled = false,
   style,
   textStyle,
 }: ButtonProps) {
-  const getButtonStyle = () => {
-    const baseStyle = [styles.button, styles[size], styles[variant]];
-    
-    if (disabled) {
-      baseStyle.push(styles.disabled);
-    }
-    
-    if (style) {
-      baseStyle.push(style);
-    }
-    
-    return baseStyle;
-  };
-
-  const getTextStyle = () => {
-    const baseStyle = [styles.text, styles[`${variant}Text`], styles[`${size}Text`]];
-    
-    if (disabled) {
-      baseStyle.push(styles.disabledText);
-    }
-    
-    if (textStyle) {
-      baseStyle.push(textStyle);
-    }
-    
-    return baseStyle;
-  };
-
   return (
     <TouchableOpacity
-      style={getButtonStyle()}
+      style={[
+        styles.button,
+        styles[variant],
+        styles[size],
+        disabled && styles.disabled,
+        style,
+      ]}
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={disabled ? 1 : 0.9}
+      activeOpacity={0.8}
     >
-      <Text style={getTextStyle()}>{title}</Text>
+      <Text style={[styles.text, styles[`${variant}Text`], styles[`${size}Text`], textStyle]}>
+        {title}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  // Base button styles
   button: {
-    alignItems: "center",
-    justifyContent: "center",
     borderRadius: 16,
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 4 },
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  
-  // Size styles
-  small: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  medium: {
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-  },
-  large: {
-    paddingHorizontal: 32,
-    paddingVertical: 18,
-    borderRadius: 20,
-  },
-  
-  // Variant styles
   primary: {
     backgroundColor: colors.primary,
   },
@@ -101,33 +59,40 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondary,
   },
   outline: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: colors.primary,
-    shadowOpacity: 0,
-    elevation: 0,
   },
-  ghost: {
-    backgroundColor: colors.wellness.lavender,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  
-  // Disabled state
   disabled: {
     backgroundColor: colors.inactive,
     shadowOpacity: 0,
     elevation: 0,
   },
-  
-  // Text styles
-  text: {
-    fontWeight: "600",
-    textAlign: "center",
-    letterSpacing: -0.3,
+  small: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  
-  // Text size styles
+  medium: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  large: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+  },
+  text: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  primaryText: {
+    color: 'white',
+  },
+  secondaryText: {
+    color: 'white',
+  },
+  outlineText: {
+    color: colors.primary,
+  },
   smallText: {
     fontSize: 14,
   },
@@ -136,24 +101,5 @@ const styles = StyleSheet.create({
   },
   largeText: {
     fontSize: 18,
-  },
-  
-  // Text variant styles
-  primaryText: {
-    color: "white",
-  },
-  secondaryText: {
-    color: "white",
-  },
-  outlineText: {
-    color: colors.primary,
-  },
-  ghostText: {
-    color: colors.primary,
-  },
-  
-  // Disabled text
-  disabledText: {
-    color: colors.textMuted,
   },
 });

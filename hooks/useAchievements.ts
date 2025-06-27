@@ -1,79 +1,70 @@
 import { useSessionStore } from '@/store/useSessionStore';
-import { Alert } from 'react-native';
 
 export function useAchievements() {
-  const { achievements, updateAchievementProgress, unlockAchievement, stats } = useSessionStore();
+  const { 
+    stats, 
+    achievements, 
+    updateAchievementProgress, 
+    unlockAchievement 
+  } = useSessionStore();
 
   const checkAchievements = (earnedPoints: number, sessionTimeSeconds: number, missionId: string) => {
     const sessionTimeMinutes = Math.floor(sessionTimeSeconds / 60);
     
-    achievements.forEach((achievement) => {
-      if (achievement.unlockedAt) return; // Already unlocked
-      
-      let newProgress = achievement.progress;
-      let shouldUnlock = false;
-      
-      switch (achievement.id) {
-        case 'first_session':
-          newProgress = stats.totalSessions + 1;
-          shouldUnlock = newProgress >= 1;
-          break;
-          
-        case 'streak_7':
-          newProgress = stats.currentStreak + 1;
-          shouldUnlock = newProgress >= 7;
-          break;
-          
-        case 'trees_50':
-          if (missionId === 'reforestation') {
-            newProgress = stats.treesPlanted + Math.floor(sessionTimeMinutes / 2);
-          } else {
-            newProgress = stats.treesPlanted;
-          }
-          shouldUnlock = newProgress >= 50;
-          break;
-          
-        case 'sessions_100':
-          newProgress = stats.totalSessions + 1;
-          shouldUnlock = newProgress >= 100;
-          break;
-          
-        case 'marathon_60':
-          if (sessionTimeMinutes >= 60) {
-            newProgress = 1;
-            shouldUnlock = true;
-          }
-          break;
-          
-        case 'ocean_100':
-          if (missionId === 'ocean') {
-            newProgress = stats.oceanCleaned + Math.floor(sessionTimeMinutes / 3);
-          } else {
-            newProgress = stats.oceanCleaned;
-          }
-          shouldUnlock = newProgress >= 100;
-          break;
+    // Check first session achievement
+    const firstSessionAchievement = achievements.find(a => a.id === 'first_session');
+    if (firstSessionAchievement && !firstSessionAchievement.unlockedAt && stats.totalSessions === 0) {
+      unlockAchievement('first_session');
+    }
+
+    // Check streak achievement
+    const streakAchievement = achievements.find(a => a.id === 'streak_7');
+    if (streakAchievement && !streakAchievement.unlockedAt) {
+      updateAchievementProgress('streak_7', stats.currentStreak + 1);
+      if (stats.currentStreak + 1 >= 7) {
+        unlockAchievement('streak_7');
       }
-      
-      // Update progress
-      if (newProgress !== achievement.progress) {
-        updateAchievementProgress(achievement.id, newProgress);
+    }
+
+    // Check trees achievement
+    if (missionId === 'reforestation') {
+      const treesAchievement = achievements.find(a => a.id === 'trees_50');
+      if (treesAchievement && !treesAchievement.unlockedAt) {
+        const newTreesCount = stats.treesPlanted + Math.floor(sessionTimeMinutes / 2);
+        updateAchievementProgress('trees_50', newTreesCount);
+        if (newTreesCount >= 50) {
+          unlockAchievement('trees_50');
+        }
       }
-      
-      // Unlock achievement if target reached
-      if (shouldUnlock) {
-        unlockAchievement(achievement.id);
-        
-        // Show achievement notification
-        setTimeout(() => {
-          Alert.alert(
-            '🏆 Nouveau succès !',
-            `${achievement.title}\n${achievement.description}`,
-            [{ text: 'Super !', style: 'default' }]
-          );
-        }, 1000);
+    }
+
+    // Check ocean achievement
+    if (missionId === 'ocean') {
+      const oceanAchievement = achievements.find(a => a.id === 'ocean_100');
+      if (oceanAchievement && !oceanAchievement.unlockedAt) {
+        const newOceanCount = stats.oceanCleaned + Math.floor(sessionTimeMinutes / 3);
+        updateAchievementProgress('ocean_100', newOceanCount);
+        if (newOceanCount >= 100) {
+          unlockAchievement('ocean_100');
+        }
       }
-    });
+    }
+
+    // Check sessions achievement
+    const sessionsAchievement = achievements.find(a => a.id === 'sessions_100');
+    if (sessionsAchievement && !sessionsAchievement.unlockedAt) {
+      const newSessionsCount = stats.totalSessions + 1;
+      updateAchievementProgress('sessions_100', newSessionsCount);
+      if (newSessionsCount >= 100) {
+        unlockAchievement('sessions_100');
+      }
+    }
+
+    // Check marathon achievement
+    const marathonAchievement = achievements.find(a => a.id === 'marathon_60');
+    if (marathonAchievement && !marathonAchievement.unlockedAt && sessionTimeMinutes >= 60) {
+      unlockAchievement('marathon_60');
+    }
   };
 
   return {
