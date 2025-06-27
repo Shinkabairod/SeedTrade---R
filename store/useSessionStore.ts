@@ -1,49 +1,57 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { defaultAchievements, Achievement } from '@/constants/achievements';
 
 export interface Session {
   id: string;
   missionId: string;
-  duration: number; // in minutes
   startTime: number;
   endTime?: number;
+  targetDuration: number;
+  actualDuration?: number;
   status: 'active' | 'completed' | 'failed';
   points: number;
 }
 
-export interface UserStats {
+export interface Stats {
   totalSessions: number;
   totalMinutes: number;
   totalPoints: number;
   currentStreak: number;
   longestStreak: number;
-  lastSessionDate?: string;
+  lastSessionDate: string | null;
   weeklyData: number[];
   treesPlanted: number;
   oceanCleaned: number;
   materialsRecycled: number;
 }
 
-interface SessionState {
-  // User data
-  stats: UserStats;
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: number;
+  progress: number;
+  target: number;
+}
+
+interface SessionStore {
+  // State
+  stats: Stats;
   sessions: Session[];
   achievements: Achievement[];
   currentSession: Session | null;
   activeMissionId: string;
   hasCompletedOnboarding: boolean;
-  
-  // UI state
   showSessionResult: boolean;
   lastSessionSuccess: boolean;
   notifications: boolean;
   userName: string;
-  
+
   // Actions
-  startSession: (duration: number) => void;
-  completeSession: (success?: boolean) => void;
+  startSession: (missionId: string, targetDuration: number) => void;
+  completeSession: () => void;
   failSession: () => void;
   setActiveMission: (missionId: string) => void;
   completeOnboarding: () => void;
@@ -54,19 +62,47 @@ interface SessionState {
   resetStore: () => void;
 }
 
-const initialStats: UserStats = {
+const initialStats: Stats = {
   totalSessions: 0,
   totalMinutes: 0,
   totalPoints: 0,
   currentStreak: 0,
   longestStreak: 0,
+  lastSessionDate: null,
   weeklyData: [0, 0, 0, 0, 0, 0, 0],
   treesPlanted: 0,
   oceanCleaned: 0,
   materialsRecycled: 0,
 };
 
-export const useSessionStore = create<SessionState>()(
+const defaultAchievements: Achievement[] = [
+  {
+    id: 'first_session',
+    title: 'Premier pas',
+    description: 'Terminer votre première session',
+    icon: '🌱',
+    progress: 0,
+    target: 1,
+  },
+  {
+    id: 'weekly_warrior',
+    title: 'Guerrier hebdomadaire',
+    description: 'Terminer 7 sessions en une semaine',
+    icon: '⚡',
+    progress: 0,
+    target: 7,
+  },
+  {
+    id: 'tree_planter',
+    title: 'Planteur d\'arbres',
+    description: 'Planter 10 arbres',
+    icon: '🌳',
+    progress: 0,
+    target: 10,
+  },
+];
+
+export const useSessionStore = create<SessionStore>()(
   persist(
     (set, get) => ({
       // Initial state
@@ -82,90 +118,54 @@ export const useSessionStore = create<SessionState>()(
       userName: 'Eco-Warrior',
 
       // Actions
-      startSession: (duration: number) => {
+      startSession: (missionId: string, targetDuration: number) => {
         const newSession: Session = {
           id: Date.now().toString(),
-          missionId: get().activeMissionId,
-          duration,
+          missionId,
           startTime: Date.now(),
+          targetDuration,
           status: 'active',
           points: 0,
         };
-        
+
         set({ currentSession: newSession });
       },
 
-      completeSession: (success = true) => {
-        const { currentSession, sessions, stats, activeMissionId } = get();
+      completeSession: () => {
+        const { currentSession, sessions, stats } = get();
         
         if (!currentSession) return;
         
-        const sessionTimeMinutes = Math.floor((Date.now() - currentSession.startTime) / 60000);
-        const actualDuration = Math.min(sessionTimeMinutes, currentSession.duration);
-        
-        // Calculate points based on mission
-        let pointsPerMinute = 2; // default
-        switch (activeMissionId) {
-          case 'reforestation':
-            pointsPerMinute = 10;
-            break;
-          case 'ocean':
-            pointsPerMinute = 8;
-            break;
-          case 'recycling':
-            pointsPerMinute = 12;
-            break;
-        }
-        
-        const points = success ? actualDuration * pointsPerMinute : 0;
-        const impactAmount = success ? actualDuration : 0;
-        
+        const endTime = Date.now();
+        const actualDuration = Math.floor((endTime - currentSession.startTime) / 60000);
+        const success = actualDuration >= currentSession.targetDuration;
+        const points = success ? actualDuration * 10 : 0; // 10 points par minute
+
         const completedSession: Session = {
           ...currentSession,
-          endTime: Date.now(),
+          endTime,
+          actualDuration,
           status: success ? 'completed' : 'failed',
           points,
         };
-        
+
+        // Update stats
         const today = new Date().toDateString();
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-        const lastSessionDate = stats.lastSessionDate;
-        
-        let newStreak = stats.currentStreak;
-        if (success) {
-          if (!lastSessionDate || lastSessionDate === yesterday) {
-            newStreak = stats.currentStreak + 1;
-          } else if (lastSessionDate !== today) {
-            newStreak = 1;
-          }
-        } else {
-          newStreak = 0;
-        }
-        
-        // Update weekly data (simplified)
-        const newWeeklyData = [...stats.weeklyData];
+        const isNewDay = stats.lastSessionDate !== today;
+        const newStreak = success ? (isNewDay ? stats.currentStreak + 1 : stats.currentStreak) : 0;
+
+        // Update weekly data
         const dayOfWeek = new Date().getDay();
-        newWeeklyData[dayOfWeek] = Math.min(newWeeklyData[dayOfWeek] + (success ? actualDuration : 0), 100);
-        
-        // Update impact based on mission
-        let newTreesPlanted = stats.treesPlanted;
-        let newOceanCleaned = stats.oceanCleaned;
-        let newMaterialsRecycled = stats.materialsRecycled;
-        
+        const newWeeklyData = [...stats.weeklyData];
         if (success) {
-          switch (activeMissionId) {
-            case 'reforestation':
-              newTreesPlanted += impactAmount;
-              break;
-            case 'ocean':
-              newOceanCleaned += impactAmount;
-              break;
-            case 'recycling':
-              newMaterialsRecycled += impactAmount;
-              break;
-          }
+          newWeeklyData[dayOfWeek] += actualDuration;
         }
-        
+
+        // Calculate impact metrics
+        const newTreesPlanted = success ? stats.treesPlanted + Math.floor(points / 100) : stats.treesPlanted;
+        const newOceanCleaned = success ? stats.oceanCleaned + Math.floor(points / 50) : stats.oceanCleaned;
+        const newMaterialsRecycled = success ? stats.materialsRecycled + Math.floor(points / 75) : stats.materialsRecycled;
+
         set({
           currentSession: null,
           sessions: [completedSession, ...sessions],
@@ -249,6 +249,12 @@ export const useSessionStore = create<SessionState>()(
     {
       name: 'seedtrade-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      // Ignore hydration errors to avoid crashes
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.log('Error rehydrating store:', error);
+        }
+      },
     }
   )
 );
