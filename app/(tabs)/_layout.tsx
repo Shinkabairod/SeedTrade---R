@@ -16,7 +16,8 @@ function TabBarIcon({ Icon, focused }: { Icon: any; focused: boolean }) {
 
 function SessionButton() {
   const handleSessionPress = () => {
-    router.push("/session");
+    // Navigate to home tab where session functionality is integrated
+    router.push("/(tabs)/home");
   };
 
   return (
@@ -53,10 +54,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="missions"
+        name="stats"
         options={{
-          title: "Missions",
-          tabBarIcon: ({ focused }) => <TabBarIcon Icon={Target} focused={focused} />,
+          title: "Stats",
+          tabBarIcon: ({ focused }) => <TabBarIcon Icon={Trophy} focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -67,10 +68,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="rankings"
+        name="missions"
         options={{
-          title: "Classement",
-          tabBarIcon: ({ focused }) => <TabBarIcon Icon={Trophy} focused={focused} />,
+          title: "Missions",
+          tabBarIcon: ({ focused }) => <TabBarIcon Icon={Target} focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="achievements"
+        options={{
+          title: "Succès",
+          tabBarIcon: ({ focused }) => <TabBarIcon Icon={User} focused={focused} />,
         }}
       />
       <Tabs.Screen
