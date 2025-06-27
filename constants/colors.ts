@@ -1,56 +1,104 @@
-export default {
-  // Couleurs principales modernes et apaisantes
-  primary: "#6B73FF", // Bleu doux moderne
-  secondary: "#9B59B6", // Violet doux
-  accent: "#FF6B6B", // Rose coral
+const colors = {
+  // Couleurs principales
+  primary: '#2E7D32',
+  primaryLight: '#4CAF50',
+  primaryDark: '#1B5E20',
   
-  // Couleurs wellness
-  wellness: {
-    sage: "#A8B5A0", // Vert sauge
-    cream: "#F7F5F3", // Crème
-    sand: "#E8DDD4", // Sable
-    lavender: "#E6E6FA", // Lavande
-  },
+  // Couleurs secondaires
+  secondary: '#4CAF50',
+  secondaryLight: '#81C784',
+  secondaryDark: '#2E7D32',
   
-  // États
-  success: "#4ECDC4", // Turquoise doux
-  error: "#FF6B6B", // Rouge coral
-  warning: "#FFD93D", // Jaune doux
-  info: "#6B73FF", // Bleu principal
+  // Couleur d'accent
+  accent: '#81C784',
+  accentLight: '#A5D6A7',
+  accentDark: '#66BB6A',
   
-  // Backgrounds et surfaces
-  background: "#FEFEFE", // Blanc très légèrement cassé
-  surface: "#FFFFFF", // Blanc pur
-  card: "#FFFFFF", // Blanc pur
+  // Arrière-plans
+  background: '#F8FDF8',
+  backgroundLight: '#FFFFFF',
+  backgroundDark: '#F1F8E9',
+  
+  // Surfaces
+  surface: '#FFFFFF',
+  surfaceLight: '#FAFAFA',
+  surfaceDark: '#F5F5F5',
   
   // Textes
-  text: "#2D3748", // Gris foncé doux
-  textLight: "#718096", // Gris moyen
-  textMuted: "#A0AEC0", // Gris clair
+  text: '#1B5E20',
+  textPrimary: '#2E7D32',
+  textSecondary: '#4CAF50',
+  textLight: '#666666',
+  textDisabled: '#9E9E9E',
   
-  // Bordures et états inactifs
-  border: "#E2E8F0", // Gris bordure très clair
-  inactive: "#CBD5E0", // Gris inactif
+  // États
+  success: '#4CAF50',
+  successLight: '#C8E6C9',
+  successDark: '#388E3C',
   
-  // Overlays et ombres
-  overlay: "rgba(45, 55, 72, 0.4)",
-  shadow: "rgba(0, 0, 0, 0.04)",
-  shadowMedium: "rgba(0, 0, 0, 0.08)",
-  shadowStrong: "rgba(0, 0, 0, 0.12)",
-
-  // Couleurs spécifiques pour les missions
-  missions: {
-    tree: "#4ECDC4", // Turquoise pour les arbres
-    water: "#6B73FF", // Bleu pour l'eau
-    education: "#FFD93D", // Jaune pour l'éducation
-    health: "#FF6B6B", // Rose pour la santé
-  },
-
-  // Couleurs pour les statistiques
+  warning: '#FF9800',
+  warningLight: '#FFE0B2',
+  warningDark: '#F57C00',
+  
+  error: '#F44336',
+  errorLight: '#FFCDD2',
+  errorDark: '#D32F2F',
+  
+  info: '#2196F3',
+  infoLight: '#BBDEFB',
+  infoDark: '#1976D2',
+  
+  // Couleurs spécifiques aux stats
   stats: {
-    points: "#6B73FF",
-    sessions: "#4ECDC4", 
-    streak: "#FFD93D",
-    time: "#9B59B6",
-  }
+    streak: '#FF6B35',
+    sessions: '#4285F4',
+    points: '#9C27B0',
+    time: '#00BCD4',
+    trees: '#4CAF50',
+    ocean: '#2196F3',
+    recycling: '#8BC34A',
+  },
+  
+  // Couleurs des missions
+  missions: {
+    reforestation: '#2E7D32',
+    ocean: '#1976D2',
+    recycling: '#388E3C',
+    education: '#F57C00',
+    health: '#C62828',
+    water: '#0277BD',
+  },
+  
+  // Bordures et séparateurs
+  border: '#E0E0E0',
+  borderLight: '#F5F5F5',
+  borderDark: '#BDBDBD',
+  
+  // Ombres
+  shadow: '#000000',
+  shadowLight: 'rgba(0, 0, 0, 0.1)',
+  shadowMedium: 'rgba(0, 0, 0, 0.2)',
+  shadowDark: 'rgba(0, 0, 0, 0.3)',
+  
+  // Overlay
+  overlay: 'rgba(0, 0, 0, 0.5)',
+  overlayLight: 'rgba(0, 0, 0, 0.3)',
+  overlayDark: 'rgba(0, 0, 0, 0.7)',
+  
+  // Couleurs transparentes
+  transparent: 'transparent',
+  white: '#FFFFFF',
+  black: '#000000',
+  
+  // Gradients (pour utilisation avec LinearGradient)
+  gradients: {
+    primary: ['#4CAF50', '#2E7D32'],
+    secondary: ['#81C784', '#4CAF50'],
+    success: ['#66BB6A', '#4CAF50'],
+    warm: ['#FFB74D', '#FF9800'],
+    cool: ['#64B5F6', '#2196F3'],
+    nature: ['#A5D6A7', '#66BB6A', '#4CAF50'],
+  },
 };
+
+export default colors;
