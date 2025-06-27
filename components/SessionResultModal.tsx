@@ -7,7 +7,8 @@ import {
   Modal, 
   Animated, 
   Share,
-  Alert 
+  Alert,
+  Platform
 } from 'react-native';
 import { CheckCircle, Clock, Share2, RotateCcw } from 'lucide-react-native';
 import colors from '@/constants/colors';
@@ -64,17 +65,18 @@ export default function SessionResultModal({
   const handleShare = async () => {
     try {
       const message = success 
-        ? `🎯 Je viens de terminer une session de ${formatTime(sessionTime)} avec SeedTrade !
-
-✅ ${earnedPoints} points gagnés
-🌱 ${impactAmount} ${mission.unit}
-
-Chaque minute compte pour un monde meilleur ! #SeedTrade`
-        : `🧘‍♂️ J'ai pris ${formatTime(sessionTime)} pour me concentrer avec SeedTrade.
-
-Chaque moment de calme compte ! #SeedTrade #Mindfulness`;
+        ? `🎯 Je viens de terminer une session de ${formatTime(sessionTime)} avec SeedTrade !\n\n✅ ${earnedPoints} points gagnés\n🌱 ${impactAmount} ${mission.unit}\n\nChaque minute compte pour un monde meilleur ! #SeedTrade`
+        : `🧘‍♂️ J'ai pris ${formatTime(sessionTime)} pour me concentrer avec SeedTrade.\n\nChaque moment de calme compte ! #SeedTrade #Mindfulness`;
         
-      await Share.share({ message });
+      if (Platform.OS === 'web') {
+        // Web fallback
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(message);
+          Alert.alert('Copié !', 'Message copié dans le presse-papier');
+        }
+      } else {
+        await Share.share({ message });
+      }
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de partager pour le moment.');
     }

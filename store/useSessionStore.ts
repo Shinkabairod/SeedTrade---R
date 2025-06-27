@@ -2,28 +2,17 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export type SessionStatus = 'active' | 'paused' | 'completed' | 'cancelled';
+
 export interface Session {
   id: string;
   missionId: string;
   startTime: number;
   endTime?: number;
-  targetDuration: number;
-  actualDuration?: number;
-  status: 'active' | 'completed' | 'failed';
+  targetDuration: number; // in minutes
+  actualDuration?: number; // in minutes
+  status: SessionStatus;
   points: number;
-}
-
-export interface Stats {
-  totalSessions: number;
-  totalMinutes: number;
-  totalPoints: number;
-  currentStreak: number;
-  longestStreak: number;
-  lastSessionDate: string | null;
-  weeklyData: number[];
-  treesPlanted: number;
-  oceanCleaned: number;
-  materialsRecycled: number;
 }
 
 export interface Achievement {
@@ -31,114 +20,109 @@ export interface Achievement {
   title: string;
   description: string;
   icon: string;
-  unlockedAt?: number;
-  progress: number;
   target: number;
+  progress: number;
+  unlockedAt?: number;
+}
+
+export interface Stats {
+  totalPoints: number;
+  totalMinutes: number;
+  totalSessions: number;
+  currentStreak: number;
+  longestStreak: number;
+  weeklyData: number[]; // 7 days of minutes
+  treesPlanted: number;
+  oceanCleaned: number;
+  materialsRecycled: number;
 }
 
 interface SessionStore {
-  // State
+  // Core state
   stats: Stats;
   sessions: Session[];
   achievements: Achievement[];
-  currentSession: Session | null;
   activeMissionId: string;
-  hasCompletedOnboarding: boolean;
+  
+  // UI state
   showSessionResult: boolean;
   lastSessionSuccess: boolean;
+  
+  // Settings
   notifications: boolean;
   userName: string;
-
+  
   // Actions
-  startSession: (missionId: string, targetDuration: number) => void;
-  completeSession: (success: boolean) => void;
-  failSession: () => void;
   setActiveMission: (missionId: string) => void;
-  completeOnboarding: () => void;
-  updateAchievements: (achievements: Achievement[]) => void;
+  completeSession: (success: boolean) => void;
   setShowSessionResult: (show: boolean) => void;
   setNotifications: (enabled: boolean) => void;
   setUserName: (name: string) => void;
   resetStore: () => void;
+  updateAchievementProgress: (achievementId: string, progress: number) => void;
+  unlockAchievement: (achievementId: string) => void;
 }
 
 const initialStats: Stats = {
-  totalSessions: 0,
-  totalMinutes: 0,
   totalPoints: 0,
+  totalMinutes: 0,
+  totalSessions: 0,
   currentStreak: 0,
   longestStreak: 0,
-  lastSessionDate: null,
   weeklyData: [0, 0, 0, 0, 0, 0, 0],
   treesPlanted: 0,
   oceanCleaned: 0,
   materialsRecycled: 0,
 };
 
-const defaultAchievements: Achievement[] = [
+const initialAchievements: Achievement[] = [
   {
     id: 'first_session',
     title: 'Premier pas',
-    description: 'Terminer votre première session',
-    icon: '🌱',
-    progress: 0,
+    description: 'Termine ta première session',
+    icon: '🎯',
     target: 1,
-  },
-  {
-    id: 'weekly_warrior',
-    title: 'Guerrier hebdomadaire',
-    description: 'Terminer 7 sessions en une semaine',
-    icon: '⚡',
     progress: 0,
-    target: 7,
   },
   {
-    id: 'tree_planter',
-    title: 'Planteur d\'arbres',
-    description: 'Planter 10 arbres',
-    icon: '🌳',
-    progress: 0,
-    target: 10,
-  },
-  {
-    id: 'zen_master',
-    title: 'Maître zen',
-    description: 'Terminer 100 sessions',
-    icon: '🧘‍♂️',
-    progress: 0,
-    target: 100,
-  },
-  {
-    id: 'marathon',
-    title: 'Marathon',
-    description: 'Session de 60 minutes',
-    icon: '⏰',
-    progress: 0,
-    target: 1,
-  },
-  {
-    id: 'ocean_protector',
-    title: 'Protecteur des océans',
-    description: 'Nettoyer 100kg de déchets',
-    icon: '🌊',
-    progress: 0,
-    target: 100,
-  },
-  {
-    id: 'persistent',
+    id: 'streak_7',
     title: 'Persévérant',
-    description: 'Série de 7 jours',
+    description: 'Maintiens une série de 7 jours',
     icon: '🔥',
-    progress: 0,
     target: 7,
+    progress: 0,
   },
   {
-    id: 'eco_warrior',
+    id: 'trees_50',
     title: 'Eco-warrior',
-    description: '1000 points gagnés',
-    icon: '🌍',
+    description: 'Plante 50 arbres virtuels',
+    icon: '🌳',
+    target: 50,
     progress: 0,
-    target: 1000,
+  },
+  {
+    id: 'sessions_100',
+    title: 'Maître zen',
+    description: 'Complète 100 sessions',
+    icon: '🧘‍♂️',
+    target: 100,
+    progress: 0,
+  },
+  {
+    id: 'marathon_60',
+    title: 'Marathon',
+    description: 'Termine une session de 60 minutes',
+    icon: '⏰',
+    target: 1,
+    progress: 0,
+  },
+  {
+    id: 'ocean_100',
+    title: 'Océan protégé',
+    description: 'Nettoie 100kg de déchets océaniques',
+    icon: '🌊',
+    target: 100,
+    progress: 0,
   },
 ];
 
@@ -148,168 +132,59 @@ export const useSessionStore = create<SessionStore>()(
       // Initial state
       stats: initialStats,
       sessions: [],
-      achievements: defaultAchievements,
-      currentSession: null,
+      achievements: initialAchievements,
       activeMissionId: 'reforestation',
-      hasCompletedOnboarding: false,
       showSessionResult: false,
       lastSessionSuccess: false,
       notifications: true,
       userName: 'Eco-Warrior',
 
       // Actions
-      startSession: (missionId: string, targetDuration: number) => {
-        const newSession: Session = {
-          id: Date.now().toString(),
-          missionId,
-          startTime: Date.now(),
-          targetDuration,
-          status: 'active',
-          points: 0,
-        };
-
-        set({ currentSession: newSession });
-      },
-
-      completeSession: (success: boolean) => {
-        const { currentSession, sessions, stats, achievements } = get();
-        
-        if (!currentSession) return;
-        
-        const endTime = Date.now();
-        const actualDuration = Math.floor((endTime - currentSession.startTime) / 60000);
-        const points = success ? actualDuration * 10 : 0; // 10 points par minute
-
-        const completedSession: Session = {
-          ...currentSession,
-          endTime,
-          actualDuration,
-          status: success ? 'completed' : 'failed',
-          points,
-        };
-
-        // Update stats
-        const today = new Date().toDateString();
-        const isNewDay = stats.lastSessionDate !== today;
-        const newStreak = success ? (isNewDay ? stats.currentStreak + 1 : stats.currentStreak) : 0;
-
-        // Update weekly data
-        const dayOfWeek = new Date().getDay();
-        const newWeeklyData = [...stats.weeklyData];
-        if (success) {
-          newWeeklyData[dayOfWeek] += actualDuration;
-        }
-
-        // Calculate impact metrics
-        const newTreesPlanted = success ? stats.treesPlanted + Math.floor(points / 100) : stats.treesPlanted;
-        const newOceanCleaned = success ? stats.oceanCleaned + Math.floor(points / 50) : stats.oceanCleaned;
-        const newMaterialsRecycled = success ? stats.materialsRecycled + Math.floor(points / 75) : stats.materialsRecycled;
-
-        // Update achievements
-        const updatedAchievements = achievements.map(achievement => {
-          if (achievement.unlockedAt) return achievement;
-          
-          let newProgress = achievement.progress;
-          let shouldUnlock = false;
-          
-          switch (achievement.id) {
-            case 'first_session':
-              if (success) {
-                newProgress = 1;
-                shouldUnlock = true;
-              }
-              break;
-            case 'weekly_warrior':
-              newProgress = Math.min(stats.totalSessions + (success ? 1 : 0), achievement.target);
-              shouldUnlock = newProgress >= achievement.target;
-              break;
-            case 'tree_planter':
-              newProgress = newTreesPlanted;
-              shouldUnlock = newProgress >= achievement.target;
-              break;
-            case 'zen_master':
-              newProgress = stats.totalSessions + (success ? 1 : 0);
-              shouldUnlock = newProgress >= achievement.target;
-              break;
-            case 'marathon':
-              if (success && actualDuration >= 60) {
-                newProgress = 1;
-                shouldUnlock = true;
-              }
-              break;
-            case 'ocean_protector':
-              newProgress = newOceanCleaned;
-              shouldUnlock = newProgress >= achievement.target;
-              break;
-            case 'persistent':
-              newProgress = newStreak;
-              shouldUnlock = newProgress >= achievement.target;
-              break;
-            case 'eco_warrior':
-              newProgress = stats.totalPoints + points;
-              shouldUnlock = newProgress >= achievement.target;
-              break;
-          }
-          
-          return {
-            ...achievement,
-            progress: newProgress,
-            unlockedAt: shouldUnlock ? Date.now() : achievement.unlockedAt,
-          };
-        });
-
-        set({
-          currentSession: null,
-          sessions: [completedSession, ...sessions],
-          achievements: updatedAchievements,
-          stats: {
-            ...stats,
-            totalSessions: success ? stats.totalSessions + 1 : stats.totalSessions,
-            totalMinutes: stats.totalMinutes + actualDuration,
-            totalPoints: stats.totalPoints + points,
-            currentStreak: newStreak,
-            longestStreak: Math.max(stats.longestStreak, newStreak),
-            lastSessionDate: success ? today : stats.lastSessionDate,
-            weeklyData: newWeeklyData,
-            treesPlanted: newTreesPlanted,
-            oceanCleaned: newOceanCleaned,
-            materialsRecycled: newMaterialsRecycled,
-          },
-          showSessionResult: true,
-          lastSessionSuccess: success,
-        });
-      },
-
-      failSession: () => {
-        const { currentSession, sessions } = get();
-        
-        if (!currentSession) return;
-        
-        const failedSession: Session = {
-          ...currentSession,
-          endTime: Date.now(),
-          status: 'failed',
-          points: 0,
-        };
-        
-        set({
-          currentSession: null,
-          sessions: [failedSession, ...sessions],
-          showSessionResult: true,
-          lastSessionSuccess: false,
-        });
-      },
-
       setActiveMission: (missionId: string) => {
         set({ activeMissionId: missionId });
       },
 
-      completeOnboarding: () => {
-        set({ hasCompletedOnboarding: true });
-      },
+      completeSession: (success: boolean) => {
+        const state = get();
+        const now = Date.now();
+        
+        // Create session record
+        const newSession: Session = {
+          id: `session_${now}`,
+          missionId: state.activeMissionId,
+          startTime: now - (success ? 1200000 : 300000), // Mock start time
+          endTime: now,
+          targetDuration: 20, // Mock target
+          actualDuration: success ? 20 : 5, // Mock duration
+          status: 'completed',
+          points: success ? 200 : 0, // Mock points
+        };
 
-      updateAchievements: (achievements: Achievement[]) => {
-        set({ achievements });
+        // Update stats
+        const newStats = { ...state.stats };
+        if (success) {
+          newStats.totalPoints += newSession.points;
+          newStats.totalMinutes += newSession.actualDuration || 0;
+          newStats.totalSessions += 1;
+          newStats.currentStreak += 1;
+          newStats.longestStreak = Math.max(newStats.longestStreak, newStats.currentStreak);
+          
+          // Update mission-specific stats
+          if (state.activeMissionId === 'reforestation') {
+            newStats.treesPlanted += Math.floor((newSession.actualDuration || 0) / 2);
+          } else if (state.activeMissionId === 'ocean') {
+            newStats.oceanCleaned += Math.floor((newSession.actualDuration || 0) / 3);
+          } else if (state.activeMissionId === 'recycling') {
+            newStats.materialsRecycled += Math.floor((newSession.actualDuration || 0) / 2);
+          }
+        }
+
+        set({
+          sessions: [newSession, ...state.sessions],
+          stats: newStats,
+          lastSessionSuccess: success,
+          showSessionResult: true,
+        });
       },
 
       setShowSessionResult: (show: boolean) => {
@@ -328,26 +203,46 @@ export const useSessionStore = create<SessionStore>()(
         set({
           stats: initialStats,
           sessions: [],
-          achievements: defaultAchievements,
-          currentSession: null,
+          achievements: initialAchievements,
           activeMissionId: 'reforestation',
-          hasCompletedOnboarding: false,
           showSessionResult: false,
           lastSessionSuccess: false,
           notifications: true,
           userName: 'Eco-Warrior',
         });
       },
+
+      updateAchievementProgress: (achievementId: string, progress: number) => {
+        set((state) => ({
+          achievements: state.achievements.map((achievement) =>
+            achievement.id === achievementId
+              ? { ...achievement, progress }
+              : achievement
+          ),
+        }));
+      },
+
+      unlockAchievement: (achievementId: string) => {
+        set((state) => ({
+          achievements: state.achievements.map((achievement) =>
+            achievement.id === achievementId
+              ? { ...achievement, unlockedAt: Date.now() }
+              : achievement
+          ),
+        }));
+      },
     }),
     {
-      name: 'seedtrade-storage',
+      name: 'session-store',
       storage: createJSONStorage(() => AsyncStorage),
-      // Ignore hydration errors to avoid crashes
-      onRehydrateStorage: () => (state, error) => {
-        if (error) {
-          console.log('Error rehydrating store:', error);
-        }
-      },
+      partialize: (state) => ({
+        stats: state.stats,
+        sessions: state.sessions,
+        achievements: state.achievements,
+        activeMissionId: state.activeMissionId,
+        notifications: state.notifications,
+        userName: state.userName,
+      }),
     }
   )
 );

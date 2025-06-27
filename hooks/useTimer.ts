@@ -1,81 +1,135 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 export interface TimerState {
-  time: number;
+  time: number; // seconds elapsed
   isActive: boolean;
   isPaused: boolean;
-  targetDuration: number;
+  targetDuration: number; // target duration in minutes
 }
 
-export const useTimer = (onComplete?: () => void) => {
+export interface TimerActions {
+  start: (durationMinutes: number) => void;
+  pause: () => void;
+  resume: () => void;
+  complete: () => void;
+  reset: () => void;
+  getProgress: () => number; // percentage 0-100
+}
+
+export function useTimer(onComplete?: () => void): TimerState & TimerActions {
   const [time, setTime] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [targetDuration, setTargetDuration] = useState(0);
+  
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (isActive && !isPaused) {
+  const start = useCallback((durationMinutes: number) => {
+    setTargetDuration(durationMinutes);
+    setTime(0);
+    setIsActive(true);
+    setIsPaused(false);
+    
+    intervalRef.current = setInterval(() => {
+      setTime(prevTime => {
+        const newTime = prevTime + 1;
+        
+        // Check if target duration is reached
+        if (newTime >= durationMinutes * 60) {
+          setIsActive(false);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
+          if (onComplete) {
+            onComplete();
+          }
+          return durationMinutes * 60;
+        }
+        
+        return newTime;
+      });
+    }, 1000);
+  }, [onComplete]);
+
+  const pause = useCallback(() => {
+    if (isActive) {
+      if (isPaused) {
+        // Resume
+        setIsPaused(false);
+        intervalRef.current = setInterval(() => {
+          setTime(prevTime => {
+            const newTime = prevTime + 1;
+            
+            if (newTime >= targetDuration * 60) {
+              setIsActive(false);
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+              }
+              if (onComplete) {
+                onComplete();
+              }
+              return targetDuration * 60;
+            }
+            
+            return newTime;
+          });
+        }, 1000);
+      } else {
+        // Pause
+        setIsPaused(true);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      }
+    }
+  }, [isActive, isPaused, targetDuration, onComplete]);
+
+  const resume = useCallback(() => {
+    if (isPaused) {
+      setIsPaused(false);
       intervalRef.current = setInterval(() => {
         setTime(prevTime => {
           const newTime = prevTime + 1;
           
-          // Auto-complete when target reached
           if (newTime >= targetDuration * 60) {
             setIsActive(false);
-            setIsPaused(false);
-            onComplete?.();
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+            }
+            if (onComplete) {
+              onComplete();
+            }
             return targetDuration * 60;
           }
           
           return newTime;
         });
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
     }
+  }, [isPaused, targetDuration, onComplete]);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isActive, isPaused, targetDuration, onComplete]);
-
-  const start = (duration: number) => {
-    setTargetDuration(duration);
-    setTime(0);
-    setIsActive(true);
-    setIsPaused(false);
-  };
-
-  const pause = () => {
-    setIsPaused(!isPaused);
-  };
-
-  const stop = () => {
+  const complete = useCallback(() => {
     setIsActive(false);
     setIsPaused(false);
-    setTime(0);
-  };
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  }, []);
 
-  const complete = () => {
+  const reset = useCallback(() => {
+    setTime(0);
     setIsActive(false);
     setIsPaused(false);
-  };
+    setTargetDuration(0);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  }, []);
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getProgress = (): number => {
+  const getProgress = useCallback(() => {
     if (targetDuration === 0) return 0;
     return Math.min((time / (targetDuration * 60)) * 100, 100);
-  };
+  }, [time, targetDuration]);
 
   return {
     time,
@@ -84,15 +138,9 @@ export const useTimer = (onComplete?: () => void) => {
     targetDuration,
     start,
     pause,
-    stop,
+    resume,
     complete,
-    formatTime,
+    reset,
     getProgress,
-    state: {
-      time,
-      isActive,
-      isPaused,
-      targetDuration
-    } as TimerState
   };
-};
+}

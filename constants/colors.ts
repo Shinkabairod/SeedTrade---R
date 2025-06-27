@@ -1,34 +1,48 @@
-const colors = {
+export default {
   // Base colors
   primary: '#6366f1',
-  secondary: '#ec4899',
-  accent: '#f59e0b',
-  
-  // Status colors
-  success: '#10b981',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  info: '#3b82f6',
+  secondary: '#8b5cf6',
+  accent: '#06b6d4',
   
   // Text colors
   text: '#1f2937',
   textLight: '#6b7280',
-  textMuted: '#9ca3af',
   
   // Background colors
   background: '#f9fafb',
   backgroundLight: '#f3f4f6',
-  surface: '#ffffff',
   card: '#ffffff',
+  surface: '#ffffff',
   
   // Border colors
   border: '#e5e7eb',
-  borderLight: '#f3f4f6',
+  
+  // Status colors
+  success: '#10b981',
+  successLight: '#d1fae5',
+  warning: '#f59e0b',
+  error: '#ef4444',
   
   // Shadow colors
-  shadow: '#000000',
-  shadowLight: '#00000010',
-  shadowMedium: '#00000020',
+  shadow: 'rgba(0, 0, 0, 0.05)',
+  shadowMedium: 'rgba(0, 0, 0, 0.1)',
+  
+  // Stats colors
+  stats: {
+    points: '#f59e0b',
+    time: '#06b6d4',
+    streak: '#ef4444',
+    sessions: '#8b5cf6',
+  },
+  
+  // Mission colors
+  missions: {
+    reforestation: '#10b981',
+    ocean: '#3b82f6',
+    recycling: '#8b5cf6',
+    education: '#f59e0b',
+    social: '#ef4444',
+  },
   
   // Wellness colors
   wellness: {
@@ -37,40 +51,4 @@ const colors = {
     mint: '#d1fae5',
     peach: '#fed7d7',
   },
-  
-  // Stats colors
-  stats: {
-    time: '#3b82f6',
-    points: '#f59e0b',
-    streak: '#ef4444',
-    sessions: '#10b981',
-  },
-  
-  // Mission colors
-  missions: {
-    reforestation: '#22c55e',
-    ocean: '#3b82f6',
-    recycling: '#8b5cf6',
-  },
-  
-  // Achievement colors
-  achievements: {
-    unlocked: '#10b981',
-    locked: '#9ca3af',
-    progress: '#6366f1',
-  },
-  
-  // Success variants
-  successLight: '#d1fae5',
-  successDark: '#065f46',
-  
-  // Error variants
-  errorLight: '#fee2e2',
-  errorDark: '#7f1d1d',
-  
-  // Warning variants
-  warningLight: '#fef3c7',
-  warningDark: '#78350f',
 };
-
-export default colors;

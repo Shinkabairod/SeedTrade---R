@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Share } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Share, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { 
   Calendar, 
@@ -65,7 +65,15 @@ export default function ProfileScreen() {
     try {
       const message = `🌱 Je viens de découvrir SeedTrade ! Cette app transforme le temps passé loin du téléphone en actions positives pour la planète. Rejoins-moi ! #SeedTrade`;
       
-      await Share.share({ message });
+      if (Platform.OS === 'web') {
+        // Web fallback
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(message);
+          Alert.alert('Copié !', 'Message copié dans le presse-papier');
+        }
+      } else {
+        await Share.share({ message });
+      }
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de partager pour le moment.');
     }
@@ -90,23 +98,30 @@ export default function ProfileScreen() {
   };
 
   const handleEditName = () => {
-    Alert.prompt(
-      'Modifier le nom',
-      'Entrez votre nouveau nom :',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Confirmer', 
-          onPress: (newName) => {
-            if (newName && newName.trim()) {
-              setUserName(newName.trim());
+    if (Platform.OS === 'web') {
+      const newName = prompt('Entrez votre nouveau nom :', userName);
+      if (newName && newName.trim()) {
+        setUserName(newName.trim());
+      }
+    } else {
+      Alert.prompt(
+        'Modifier le nom',
+        'Entrez votre nouveau nom :',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { 
+            text: 'Confirmer', 
+            onPress: (newName) => {
+              if (newName && newName.trim()) {
+                setUserName(newName.trim());
+              }
             }
           }
-        }
-      ],
-      'plain-text',
-      userName
-    );
+        ],
+        'plain-text',
+        userName
+      );
+    }
   };
 
   if (showSettings) {
