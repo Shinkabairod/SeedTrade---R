@@ -1,104 +1,76 @@
 const colors = {
-  // Couleurs principales
-  primary: '#2E7D32',
-  primaryLight: '#4CAF50',
-  primaryDark: '#1B5E20',
+  // Base colors
+  primary: '#6366f1',
+  secondary: '#ec4899',
+  accent: '#f59e0b',
   
-  // Couleurs secondaires
-  secondary: '#4CAF50',
-  secondaryLight: '#81C784',
-  secondaryDark: '#2E7D32',
+  // Status colors
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
   
-  // Couleur d'accent
-  accent: '#81C784',
-  accentLight: '#A5D6A7',
-  accentDark: '#66BB6A',
+  // Text colors
+  text: '#1f2937',
+  textLight: '#6b7280',
+  textMuted: '#9ca3af',
   
-  // Arrière-plans
-  background: '#F8FDF8',
-  backgroundLight: '#FFFFFF',
-  backgroundDark: '#F1F8E9',
+  // Background colors
+  background: '#f9fafb',
+  backgroundLight: '#f3f4f6',
+  surface: '#ffffff',
+  card: '#ffffff',
   
-  // Surfaces
-  surface: '#FFFFFF',
-  surfaceLight: '#FAFAFA',
-  surfaceDark: '#F5F5F5',
+  // Border colors
+  border: '#e5e7eb',
+  borderLight: '#f3f4f6',
   
-  // Textes
-  text: '#1B5E20',
-  textPrimary: '#2E7D32',
-  textSecondary: '#4CAF50',
-  textLight: '#666666',
-  textDisabled: '#9E9E9E',
-  
-  // États
-  success: '#4CAF50',
-  successLight: '#C8E6C9',
-  successDark: '#388E3C',
-  
-  warning: '#FF9800',
-  warningLight: '#FFE0B2',
-  warningDark: '#F57C00',
-  
-  error: '#F44336',
-  errorLight: '#FFCDD2',
-  errorDark: '#D32F2F',
-  
-  info: '#2196F3',
-  infoLight: '#BBDEFB',
-  infoDark: '#1976D2',
-  
-  // Couleurs spécifiques aux stats
-  stats: {
-    streak: '#FF6B35',
-    sessions: '#4285F4',
-    points: '#9C27B0',
-    time: '#00BCD4',
-    trees: '#4CAF50',
-    ocean: '#2196F3',
-    recycling: '#8BC34A',
-  },
-  
-  // Couleurs des missions
-  missions: {
-    reforestation: '#2E7D32',
-    ocean: '#1976D2',
-    recycling: '#388E3C',
-    education: '#F57C00',
-    health: '#C62828',
-    water: '#0277BD',
-  },
-  
-  // Bordures et séparateurs
-  border: '#E0E0E0',
-  borderLight: '#F5F5F5',
-  borderDark: '#BDBDBD',
-  
-  // Ombres
+  // Shadow colors
   shadow: '#000000',
-  shadowLight: 'rgba(0, 0, 0, 0.1)',
-  shadowMedium: 'rgba(0, 0, 0, 0.2)',
-  shadowDark: 'rgba(0, 0, 0, 0.3)',
+  shadowLight: '#00000010',
+  shadowMedium: '#00000020',
   
-  // Overlay
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(0, 0, 0, 0.3)',
-  overlayDark: 'rgba(0, 0, 0, 0.7)',
-  
-  // Couleurs transparentes
-  transparent: 'transparent',
-  white: '#FFFFFF',
-  black: '#000000',
-  
-  // Gradients (pour utilisation avec LinearGradient)
-  gradients: {
-    primary: ['#4CAF50', '#2E7D32'],
-    secondary: ['#81C784', '#4CAF50'],
-    success: ['#66BB6A', '#4CAF50'],
-    warm: ['#FFB74D', '#FF9800'],
-    cool: ['#64B5F6', '#2196F3'],
-    nature: ['#A5D6A7', '#66BB6A', '#4CAF50'],
+  // Wellness colors
+  wellness: {
+    lavender: '#e0e7ff',
+    cream: '#fef3c7',
+    mint: '#d1fae5',
+    peach: '#fed7d7',
   },
+  
+  // Stats colors
+  stats: {
+    time: '#3b82f6',
+    points: '#f59e0b',
+    streak: '#ef4444',
+    sessions: '#10b981',
+  },
+  
+  // Mission colors
+  missions: {
+    reforestation: '#22c55e',
+    ocean: '#3b82f6',
+    recycling: '#8b5cf6',
+  },
+  
+  // Achievement colors
+  achievements: {
+    unlocked: '#10b981',
+    locked: '#9ca3af',
+    progress: '#6366f1',
+  },
+  
+  // Success variants
+  successLight: '#d1fae5',
+  successDark: '#065f46',
+  
+  // Error variants
+  errorLight: '#fee2e2',
+  errorDark: '#7f1d1d',
+  
+  // Warning variants
+  warningLight: '#fef3c7',
+  warningDark: '#78350f',
 };
 
 export default colors;

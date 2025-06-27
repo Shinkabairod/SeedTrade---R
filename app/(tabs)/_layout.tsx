@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, BarChart3, User, Target } from 'lucide-react-native';
+import { Home, BarChart3, User, Target, Award } from 'lucide-react-native';
 import colors from '@/constants/colors';
 
 export default function TabLayout() {
@@ -35,6 +35,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="stats"
+        options={{
+          title: 'Stats',
+          tabBarIcon: ({ color, size }) => (
+            <BarChart3 size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="missions"
         options={{
           title: 'Missions',
@@ -44,11 +53,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="stats"
+        name="achievements"
         options={{
-          title: 'Statistiques',
+          title: 'Succès',
           tabBarIcon: ({ color, size }) => (
-            <BarChart3 size={size} color={color} />
+            <Award size={size} color={color} />
           ),
         }}
       />

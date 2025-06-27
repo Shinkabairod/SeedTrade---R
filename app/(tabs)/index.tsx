@@ -1,331 +1,320 @@
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  Animated,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Play,
-  Pause,
+import React, { useState } from "react";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { 
+  ChevronRight, 
+  Award, 
+  User, 
+  Settings, 
+  Sparkles, 
+  Play, 
+  Pause, 
   RotateCcw,
-  Target,
   Clock,
-  Award,
-  TreePine,
-  Waves,
-  Recycle,
-  Leaf,
-} from 'lucide-react-native';
-import { useSessionStore } from '@/store/useSessionStore';
+  Target,
+  Zap
+} from "lucide-react-native";
+import { useSessionStore } from "@/store/useSessionStore";
+import { missions } from "@/constants/missions";
+import { useTimer } from "@/hooks/useTimer";
+import { useAchievements } from "@/hooks/useAchievements";
+import colors from "@/constants/colors";
+import MissionCard from "@/components/MissionCard";
+import Button from "@/components/Button";
+import DurationPicker from "@/components/DurationPicker";
+import SessionResultModal from "@/components/SessionResultModal";
 
-const colors = {
-  primary: '#2E7D32',
-  secondary: '#4CAF50',
-  accent: '#81C784',
-  background: '#F8FDF8',
-  surface: '#FFFFFF',
-  text: '#1B5E20',
-  textLight: '#666666',
-  success: '#4CAF50',
-  warning: '#FF9800',
-  error: '#F44336',
-  stats: {
-    streak: '#FF6B35',
-    sessions: '#4285F4',
-    points: '#9C27B0',
-  },
-};
-
-const missions = [
-  {
-    id: 'reforestation',
-    title: 'Reforestation',
-    description: 'Chaque minute plantée = 1 arbre',
-    icon: TreePine,
-    color: colors.primary,
-    pointsPerMinute: 10,
-    unit: 'arbres plantés',
-  },
-  {
-    id: 'ocean',
-    title: 'Nettoyage océan',
-    description: 'Chaque minute = 50g déchets retirés',
-    icon: Waves,
-    color: '#1976D2',
-    pointsPerMinute: 8,
-    unit: 'kg déchets retirés',
-  },
-  {
-    id: 'recycling',
-    title: 'Recyclage',
-    description: 'Chaque minute = matériaux recyclés',
-    icon: Recycle,
-    color: '#388E3C',
-    pointsPerMinute: 12,
-    unit: 'kg matériaux recyclés',
-  },
-];
+const DURATIONS = [5, 10, 20, 30, 45, 60];
 
 export default function HomeScreen() {
-  const {
-    stats,
-    currentSession,
-    activeMissionId,
-    showSessionResult,
-    startSession,
+  const { 
+    stats, 
+    activeMissionId, 
+    setActiveMission, 
     completeSession,
-    failSession,
-    setActiveMission,
-    setShowSessionResult,
+    showSessionResult,
+    lastSessionSuccess,
+    setShowSessionResult
   } = useSessionStore();
+  
+  const { checkAchievements } = useAchievements();
+  const [selectedDuration, setSelectedDuration] = useState(20);
+  
+  const timer = useTimer(() => {
+    handleCompleteSession(true);
+  });
 
-  const [sessionTime, setSessionTime] = useState(0);
-  const [selectedDuration, setSelectedDuration] = useState(5);
-  const fadeAnim = new Animated.Value(1);
-
-  const activeMission = missions.find(m => m.id === activeMissionId) || missions[0];
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
+  const activeMission = missions.find(m => m.id === activeMissionId)!;
+  
+  const handleStartSession = () => {
+    timer.start(selectedDuration);
+  };
+  
+  const handleCompleteSession = (success: boolean) => {
+    const sessionTimeSeconds = timer.time;
+    const sessionTimeMinutes = Math.floor(sessionTimeSeconds / 60);
+    const earnedPoints = success ? sessionTimeMinutes * activeMission.pointsPerMinute : 0;
     
-    if (currentSession) {
-      interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - currentSession.startTime) / 1000);
-        setSessionTime(elapsed);
-      }, 1000);
-    } else {
-      setSessionTime(0);
+    timer.complete();
+    completeSession(success);
+    
+    if (success) {
+      checkAchievements(earnedPoints, sessionTimeSeconds, activeMissionId);
     }
+  };
+  
+  const handleSelectMission = (missionId: string) => {
+    setActiveMission(missionId);
+  };
 
-    return () => clearInterval(interval);
-  }, [currentSession]);
-
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleStartSession = () => {
-    if (currentSession) {
-      Alert.alert(
-        'Session en cours',
-        'Voulez-vous terminer la session actuelle ?',
-        [
-          { text: 'Continuer', style: 'cancel' },
-          { text: 'Terminer', onPress: completeSession },
-        ]
-      );
-      return;
-    }
-
-    startSession(activeMissionId, selectedDuration);
+  const getSessionPhase = (): string => {
+    const progress = timer.getProgress();
+    if (progress < 25) return "🌱 Respire profondément";
+    if (progress < 50) return "🧘‍♂️ Tu es dans le flow";
+    if (progress < 75) return "⚡ Concentration maximale";
+    return "🏆 Tu es un champion !";
   };
 
-  const handleCompleteSession = () => {
-    Alert.alert(
-      'Terminer la session',
-      'Félicitations ! Voulez-vous terminer votre session ?',
-      [
-        { text: 'Continuer', style: 'cancel' },
-        { text: 'Terminer', onPress: completeSession },
-      ]
-    );
-  };
-
-  const handleFailSession = () => {
-    Alert.alert(
-      'Abandonner la session',
-      'Êtes-vous sûr de vouloir abandonner cette session ?',
-      [
-        { text: 'Continuer', style: 'cancel' },
-        { text: 'Abandonner', style: 'destructive', onPress: failSession },
-      ]
-    );
-  };
-
-  const renderSessionResult = () => {
-    if (!showSessionResult) return null;
-
-    return (
-      <View style={styles.modalOverlay}>
-        <View style={styles.resultModal}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setShowSessionResult(false)}
+  const earnedPoints = Math.floor(timer.time / 60) * activeMission.pointsPerMinute;
+  const impactAmount = Math.floor(timer.time / 60);
+  
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.greeting}>Bonjour 👋</Text>
+          <Text style={styles.headerTitle}>Prêt pour une session ?</Text>
+        </View>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => router.push("/(tabs)/profile")}
           >
-            <Text style={styles.closeButtonText}>×</Text>
+            <User size={20} color={colors.text} />
           </TouchableOpacity>
-          
-          <View style={styles.resultIcon}>
-            <Award size={48} color={colors.success} />
-          </View>
-          
-          <Text style={styles.resultTitle}>Session terminée !</Text>
-          <Text style={styles.resultText}>
-            Vous avez contribué à {activeMission.title}
-          </Text>
-          
-          <TouchableOpacity
-            style={styles.resultButton}
-            onPress={() => setShowSessionResult(false)}
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => router.push("/settings")}
           >
-            <Text style={styles.resultButtonText}>Continuer</Text>
+            <Settings size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
-    );
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>SeedTrade</Text>
-          <Text style={styles.subtitle}>
-            Transforme ton temps en impact positif
-          </Text>
-        </View>
-
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Target size={20} color={colors.stats.sessions} />
-            <Text style={styles.statValue}>{stats.totalSessions}</Text>
-            <Text style={styles.statLabel}>Sessions</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Clock size={20} color={colors.stats.streak} />
-            <Text style={styles.statValue}>{stats.totalMinutes}</Text>
-            <Text style={styles.statLabel}>Minutes</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Award size={20} color={colors.stats.points} />
-            <Text style={styles.statValue}>{stats.totalPoints}</Text>
-            <Text style={styles.statLabel}>Points</Text>
-          </View>
-        </View>
-
-        {/* Mission Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Choisir une mission</Text>
-          <View style={styles.missionsContainer}>
-            {missions.map((mission) => (
-              <TouchableOpacity
-                key={mission.id}
-                style={[
-                  styles.missionCard,
-                  activeMissionId === mission.id && styles.missionCardActive,
-                ]}
-                onPress={() => setActiveMission(mission.id)}
-              >
-                <View style={[styles.missionIcon, { backgroundColor: mission.color }]}>
-                  <mission.icon size={24} color="white" />
-                </View>
-                <Text style={styles.missionTitle}>{mission.title}</Text>
-                <Text style={styles.missionDescription}>{mission.description}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Session Timer */}
-        <View style={styles.timerSection}>
-          <View style={styles.timerContainer}>
-            <View style={[styles.timerCircle, currentSession && styles.timerCircleActive]}>
-              <Text style={styles.timerText}>{formatTime(sessionTime)}</Text>
-              {currentSession && (
-                <Text style={styles.timerTarget}>
-                  / {selectedDuration}:00
-                </Text>
-              )}
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.heroSection}>
+          <View style={styles.sessionCard}>
+            <View style={styles.sessionHeader}>
+              <Sparkles size={24} color={colors.primary} />
+              <Text style={styles.sessionCardTitle}>
+                {timer.isActive ? 'Session en cours' : 'Nouvelle session'}
+              </Text>
             </View>
-          </View>
-
-          {!currentSession ? (
-            <>
-              {/* Duration Selection */}
-              <View style={styles.durationContainer}>
-                <Text style={styles.sectionTitle}>Durée (minutes)</Text>
-                <View style={styles.durationButtons}>
-                  {[5, 10, 15, 30].map((duration) => (
-                    <TouchableOpacity
-                      key={duration}
-                      style={[
-                        styles.durationButton,
-                        selectedDuration === duration && styles.durationButtonActive,
-                      ]}
-                      onPress={() => setSelectedDuration(duration)}
-                    >
-                      <Text
+            
+            {!timer.isActive ? (
+              <>
+                <Text style={styles.sessionCardSubtitle}>
+                  Choisis ta durée et commence à avoir un impact
+                </Text>
+                
+                <DurationPicker
+                  durations={DURATIONS}
+                  selectedDuration={selectedDuration}
+                  onSelectDuration={setSelectedDuration}
+                />
+                
+                <Button
+                  title="Commencer la session"
+                  onPress={handleStartSession}
+                  size="large"
+                  style={styles.startButton}
+                />
+              </>
+            ) : (
+              <View style={styles.activeSessionContainer}>
+                <Text style={styles.phaseMessage}>{getSessionPhase()}</Text>
+                
+                <View style={styles.timerContainer}>
+                  <Text style={styles.timerText}>{formatTime(timer.time)}</Text>
+                  <Text style={styles.timerLabel}>
+                    Objectif: {selectedDuration} minutes
+                  </Text>
+                  
+                  <View style={styles.progressBarContainer}>
+                    <View style={styles.progressBar}>
+                      <View 
                         style={[
-                          styles.durationButtonText,
-                          selectedDuration === duration && styles.durationButtonTextActive,
+                          styles.progressFill,
+                          { width: `${timer.getProgress()}%` }
                         ]}
-                      >
-                        {duration}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                      />
+                    </View>
+                  </View>
+                </View>
+                
+                <View style={styles.sessionStats}>
+                  <Text style={styles.sessionStatsText}>
+                    ≈ {earnedPoints} points • {impactAmount} {activeMission.unit}
+                  </Text>
+                </View>
+                
+                <View style={styles.sessionControls}>
+                  <TouchableOpacity
+                    style={[
+                      styles.controlButton,
+                      timer.isPaused ? styles.resumeButton : styles.pauseButton
+                    ]}
+                    onPress={timer.pause}
+                  >
+                    {timer.isPaused ? (
+                      <Play size={20} color="white" />
+                    ) : (
+                      <Pause size={20} color="white" />
+                    )}
+                    <Text style={styles.controlButtonText}>
+                      {timer.isPaused ? 'Reprendre' : 'Pause'}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.controlButton, styles.stopButton]}
+                    onPress={() => {
+                      Alert.alert(
+                        'Terminer la session ?',
+                        'Veux-tu vraiment arrêter ta session maintenant ?',
+                        [
+                          { text: 'Continuer', style: 'cancel' },
+                          { 
+                            text: 'Terminer', 
+                            style: 'destructive',
+                            onPress: () => handleCompleteSession(timer.time >= 300) // 5min minimum
+                          }
+                        ]
+                      );
+                    }}
+                  >
+                    <RotateCcw size={20} color="white" />
+                    <Text style={styles.controlButtonText}>Terminer</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-
-              {/* Start Button */}
-              <TouchableOpacity style={styles.startButton} onPress={handleStartSession}>
-                <Play size={24} color="white" />
-                <Text style={styles.startButtonText}>Commencer</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            /* Session Controls */
-            <View style={styles.sessionControls}>
-              <TouchableOpacity style={styles.completeButton} onPress={handleCompleteSession}>
-                <Pause size={24} color="white" />
-                <Text style={styles.controlButtonText}>Terminer</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.failButton} onPress={handleFailSession}>
-                <RotateCcw size={24} color="white" />
-                <Text style={styles.controlButtonText}>Abandonner</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Impact Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Votre impact</Text>
-          <View style={styles.impactContainer}>
-            <View style={styles.impactCard}>
-              <TreePine size={24} color={colors.primary} />
-              <Text style={styles.impactValue}>{stats.treesPlanted}</Text>
-              <Text style={styles.impactLabel}>Arbres plantés</Text>
-            </View>
-            
-            <View style={styles.impactCard}>
-              <Waves size={24} color="#1976D2" />
-              <Text style={styles.impactValue}>{stats.oceanCleaned}</Text>
-              <Text style={styles.impactLabel}>kg océan nettoyé</Text>
-            </View>
-            
-            <View style={styles.impactCard}>
-              <Recycle size={24} color="#388E3C" />
-              <Text style={styles.impactValue}>{stats.materialsRecycled}</Text>
-              <Text style={styles.impactLabel}>kg recyclés</Text>
-            </View>
+            )}
           </View>
         </View>
+        
+        {!timer.isActive && (
+          <>
+            <View style={styles.quickStatsSection}>
+              <View style={styles.quickStatsGrid}>
+                <TouchableOpacity 
+                  style={styles.quickStatCard}
+                  onPress={() => router.push("/(tabs)/stats")}
+                >
+                  <View style={styles.quickStatIcon}>
+                    <Zap size={20} color={colors.stats.points} />
+                  </View>
+                  <Text style={styles.quickStatValue}>{stats.totalPoints}</Text>
+                  <Text style={styles.quickStatLabel}>Points</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.quickStatCard}
+                  onPress={() => router.push("/(tabs)/achievements")}
+                >
+                  <View style={styles.quickStatIcon}>
+                    <Target size={20} color={colors.stats.streak} />
+                  </View>
+                  <Text style={styles.quickStatValue}>{stats.currentStreak}</Text>
+                  <Text style={styles.quickStatLabel}>Série</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.quickStatCard}
+                  onPress={() => router.push("/(tabs)/stats")}
+                >
+                  <View style={styles.quickStatIcon}>
+                    <Clock size={20} color={colors.stats.time} />
+                  </View>
+                  <Text style={styles.quickStatValue}>{Math.floor(stats.totalMinutes / 60)}h</Text>
+                  <Text style={styles.quickStatLabel}>Temps</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.quickStatCard}
+                  onPress={() => router.push("/(tabs)/achievements")}
+                >
+                  <View style={styles.quickStatIcon}>
+                    <Award size={20} color={colors.stats.sessions} />
+                  </View>
+                  <Text style={styles.quickStatValue}>{stats.totalSessions}</Text>
+                  <Text style={styles.quickStatLabel}>Sessions</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.missionSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Mission active</Text>
+                <TouchableOpacity 
+                  style={styles.changeMissionButton}
+                  onPress={() => router.push("/(tabs)/missions")}
+                >
+                  <Text style={styles.changeMissionText}>Changer</Text>
+                  <ChevronRight size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+              
+              <MissionCard
+                mission={activeMission}
+                isActive={true}
+                onPress={() => {}}
+              />
+            </View>
+            
+            <View style={styles.missionSection}>
+              <Text style={styles.sectionTitle}>Découvrir</Text>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScroll}
+              >
+                {missions
+                  .filter(m => m.id !== activeMissionId)
+                  .slice(0, 3)
+                  .map((mission) => (
+                    <View key={mission.id} style={styles.horizontalMissionCard}>
+                      <MissionCard
+                        mission={mission}
+                        isActive={false}
+                        onPress={() => handleSelectMission(mission.id)}
+                      />
+                    </View>
+                  ))}
+              </ScrollView>
+            </View>
+          </>
+        )}
       </ScrollView>
 
-      {renderSessionResult()}
+      <SessionResultModal
+        visible={showSessionResult}
+        onClose={() => setShowSessionResult(false)}
+        success={lastSessionSuccess}
+        sessionTime={timer.time}
+        mission={activeMission}
+        earnedPoints={earnedPoints}
+        impactAmount={impactAmount}
+      />
     </SafeAreaView>
   );
 }
@@ -336,288 +325,238 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    padding: 20,
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    backgroundColor: colors.background,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 24,
-    gap: 12,
-  },
-  statCard: {
+  headerLeft: {
     flex: 1,
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
+  greeting: {
+    fontSize: 14,
     color: colors.textLight,
-    marginTop: 4,
+    marginBottom: 4,
+    fontWeight: "500",
   },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
     color: colors.text,
-    marginBottom: 16,
+    letterSpacing: -0.5,
   },
-  missionsContainer: {
-    gap: 12,
+  headerIcons: {
+    flexDirection: "row",
+    gap: 8,
   },
-  missionCard: {
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
+  iconButton: {
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: colors.card,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  missionCardActive: {
-    borderWidth: 2,
-    borderColor: colors.accent,
+  scrollContent: {
+    paddingBottom: 120,
   },
-  missionIcon: {
-    width: 48,
-    height: 48,
+  heroSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  sessionCard: {
+    backgroundColor: colors.card,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
+    padding: 28,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  missionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  sessionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 8,
+  },
+  sessionCardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
     color: colors.text,
-    flex: 1,
+    letterSpacing: -0.3,
   },
-  missionDescription: {
-    fontSize: 12,
+  sessionCardSubtitle: {
+    fontSize: 14,
     color: colors.textLight,
-    marginTop: 4,
-    flex: 1,
-  },
-  timerSection: {
-    paddingHorizontal: 20,
     marginBottom: 24,
+    lineHeight: 20,
+  },
+  startButton: {
+    marginTop: 20,
+  },
+  activeSessionContainer: {
+    alignItems: 'center',
+  },
+  phaseMessage: {
+    fontSize: 16,
+    color: colors.primary,
+    textAlign: 'center',
+    marginBottom: 24,
+    fontWeight: '600',
   },
   timerContainer: {
     alignItems: 'center',
     marginBottom: 24,
   },
-  timerCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 4,
-    borderColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
-  timerCircleActive: {
-    borderColor: colors.primary,
-  },
   timerText: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 48,
+    fontWeight: '300',
     color: colors.text,
+    marginBottom: 8,
+    letterSpacing: -2,
   },
-  timerTarget: {
-    fontSize: 16,
+  timerLabel: {
+    fontSize: 14,
     color: colors.textLight,
+    marginBottom: 20,
   },
-  durationContainer: {
+  progressBarContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 4,
+  },
+  sessionStats: {
     marginBottom: 24,
   },
-  durationButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  durationButton: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  durationButtonActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.primary,
-  },
-  durationButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  durationButtonTextActive: {
-    color: 'white',
-  },
-  startButton: {
-    backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 18,
-    borderRadius: 12,
-    gap: 8,
-  },
-  startButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
+  sessionStatsText: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
   },
   sessionControls: {
     flexDirection: 'row',
     gap: 12,
+    width: '100%',
   },
-  completeButton: {
+  controlButton: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    gap: 8,
+  },
+  pauseButton: {
+    backgroundColor: colors.warning,
+  },
+  resumeButton: {
     backgroundColor: colors.success,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
   },
-  failButton: {
-    flex: 1,
+  stopButton: {
     backgroundColor: colors.error,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
   },
   controlButtonText: {
+    color: 'white',
     fontSize: 16,
     fontWeight: '600',
-    color: 'white',
   },
-  impactContainer: {
+  quickStatsSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  quickStatsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  impactCard: {
+  quickStatCard: {
     flex: 1,
-    backgroundColor: colors.surface,
+    minWidth: '45%',
+    backgroundColor: colors.card,
+    borderRadius: 20,
     padding: 16,
-    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  impactValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginTop: 8,
-  },
-  impactLabel: {
-    fontSize: 12,
-    color: colors.textLight,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  resultModal: {
-    backgroundColor: colors.surface,
-    margin: 20,
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 1,
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 2,
   },
-  closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F5F5F5',
+  quickStatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.wellness.cream,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: colors.textLight,
-  },
-  resultIcon: {
-    marginBottom: 16,
-  },
-  resultTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
     marginBottom: 8,
   },
-  resultText: {
-    fontSize: 16,
+  quickStatValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  quickStatLabel: {
+    fontSize: 11,
     color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: 24,
+    fontWeight: '500',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  resultButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
+  missionSection: {
+    paddingBottom: 32,
   },
-  resultButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  changeMissionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.wellness.lavender,
+    borderRadius: 12,
+  },
+  changeMissionText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: "600",
+  },
+  horizontalScroll: {
+    paddingLeft: 24,
+    gap: 16,
+  },
+  horizontalMissionCard: {
+    width: 300,
   },
 });

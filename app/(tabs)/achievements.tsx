@@ -1,182 +1,170 @@
-import React from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Trophy, Target, Clock, Award } from "lucide-react-native";
-import { useAchievements } from "@/hooks/useAchievements";
-import { useSessionStore } from "@/store/useSessionStore";
-import colors from "@/constants/colors";
-import AchievementCard from "@/components/AchievementCard";
+import React from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Trophy, Star, Target, Clock, Award } from 'lucide-react-native';
+import { useSessionStore } from '@/store/useSessionStore';
+import colors from '@/constants/colors';
 
 export default function AchievementsScreen() {
-  const { achievements, getUnlockedCount, getProgressAchievements } = useAchievements();
-  const { stats } = useSessionStore();
-  
-  const unlockedCount = getUnlockedCount();
-  const progressAchievements = getProgressAchievements();
-  
-  const categoryAchievements = {
-    session: achievements.filter(a => a.category === 'session'),
-    impact: achievements.filter(a => a.category === 'impact'),
-    streak: achievements.filter(a => a.category === 'streak'),
-    time: achievements.filter(a => a.category === 'time'),
+  const { achievements, stats } = useSessionStore();
+
+  const unlockedAchievements = achievements.filter(a => a.unlockedAt);
+  const lockedAchievements = achievements.filter(a => !a.unlockedAt);
+
+  const handleAchievementPress = (achievement: any) => {
+    if (achievement.unlockedAt) {
+      const unlockedDate = new Date(achievement.unlockedAt).toLocaleDateString('fr-FR');
+      Alert.alert(
+        `🏆 ${achievement.title}`,
+        `${achievement.description}
+
+Débloqué le ${unlockedDate}
+
+Félicitations pour ce succès !`
+      );
+    } else {
+      Alert.alert(
+        `📈 ${achievement.title}`,
+        `${achievement.description}
+
+Progression: ${achievement.progress}/${achievement.target}
+
+Continue comme ça !`
+      );
+    }
+  };
+
+  const renderAchievementCard = (achievement: any, isUnlocked: boolean) => (
+    <TouchableOpacity
+      key={achievement.id}
+      style={[
+        styles.achievementCard,
+        isUnlocked ? styles.unlockedCard : styles.lockedCard
+      ]}
+      onPress={() => handleAchievementPress(achievement)}
+    >
+      <View style={[
+        styles.achievementIcon,
+        { backgroundColor: isUnlocked ? colors.success : colors.border }
+      ]}>
+        <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+      </View>
+      
+      <View style={styles.achievementContent}>
+        <Text style={[
+          styles.achievementTitle,
+          { color: isUnlocked ? colors.text : colors.textLight }
+        ]}>
+          {achievement.title}
+        </Text>
+        <Text style={styles.achievementDescription}>
+          {achievement.description}
+        </Text>
+        
+        {!isUnlocked && (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill,
+                  { 
+                    width: `${Math.min((achievement.progress / achievement.target) * 100, 100)}%`,
+                    backgroundColor: colors.accent,
+                  }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressText}>
+              {achievement.progress}/{achievement.target}
+            </Text>
+          </View>
+        )}
+      </View>
+      
+      {isUnlocked && (
+        <View style={styles.unlockedBadge}>
+          <Star size={16} color={colors.success} fill={colors.success} />
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
+  const getNextAchievements = () => {
+    return lockedAchievements
+      .filter(a => a.progress > 0)
+      .sort((a, b) => (b.progress / b.target) - (a.progress / a.target))
+      .slice(0, 3);
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Achievements</Text>
-          <Text style={styles.subtitle}>Tes succès et récompenses</Text>
-          <View style={styles.progressSummary}>
-            <Text style={styles.progressText}>
-              {unlockedCount}/{achievements.length} succès débloqués
-            </Text>
-          </View>
-        </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Succès</Text>
+        <Text style={styles.subtitle}>
+          {unlockedAchievements.length}/{achievements.length} débloqués
+        </Text>
+      </View>
 
-        {/* Statistiques rapides */}
-        <View style={styles.quickStatsContainer}>
-          <View style={styles.quickStatCard}>
-            <Trophy size={24} color={colors.primary} />
-            <Text style={styles.quickStatValue}>{unlockedCount}</Text>
-            <Text style={styles.quickStatLabel}>Débloqués</Text>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Progress Overview */}
+        <View style={styles.overviewContainer}>
+          <View style={styles.overviewCard}>
+            <Trophy size={32} color={colors.stats.points} />
+            <Text style={styles.overviewValue}>{unlockedAchievements.length}</Text>
+            <Text style={styles.overviewLabel}>Succès débloqués</Text>
           </View>
           
-          <View style={styles.quickStatCard}>
-            <Target size={24} color={colors.success} />
-            <Text style={styles.quickStatValue}>{progressAchievements.length}</Text>
-            <Text style={styles.quickStatLabel}>En cours</Text>
-          </View>
-          
-          <View style={styles.quickStatCard}>
-            <Award size={24} color={colors.accent} />
-            <Text style={styles.quickStatValue}>
-              {Math.floor(stats.totalPoints / 500) + 1}
+          <View style={styles.overviewCard}>
+            <Target size={32} color={colors.stats.streak} />
+            <Text style={styles.overviewValue}>
+              {Math.round((unlockedAchievements.length / achievements.length) * 100)}%
             </Text>
-            <Text style={styles.quickStatLabel}>Niveau</Text>
+            <Text style={styles.overviewLabel}>Progression</Text>
           </View>
         </View>
 
-        {/* Tous les achievements */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tous les succès</Text>
-          <View style={styles.achievementsGrid}>
-            {achievements.map((achievement) => (
-              <AchievementCard
-                key={achievement.id}
-                achievement={achievement}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Prochains objectifs */}
-        {progressAchievements.length > 0 && (
+        {/* Unlocked Achievements */}
+        {unlockedAchievements.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Prochains objectifs</Text>
-            <View style={styles.objectivesContainer}>
-              {progressAchievements.slice(0, 3).map(achievement => {
-                const progress = achievement.progress && achievement.target 
-                  ? (achievement.progress / achievement.target) * 100 
-                  : 0;
-                
-                return (
-                  <View key={achievement.id} style={styles.objectiveCard}>
-                    <View style={styles.objectiveHeader}>
-                      <Text style={styles.objectiveIcon}>{achievement.icon}</Text>
-                      <View style={styles.objectiveInfo}>
-                        <Text style={styles.objectiveTitle}>{achievement.title}</Text>
-                        <Text style={styles.objectiveDescription}>
-                          {achievement.description}
-                        </Text>
-                      </View>
-                      <Text style={styles.objectiveProgress}>
-                        {Math.round(progress)}%
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.objectiveProgressBar}>
-                      <View 
-                        style={[
-                          styles.objectiveProgressFill,
-                          { width: `${progress}%` }
-                        ]}
-                      />
-                    </View>
-                    
-                    <Text style={styles.objectiveProgressText}>
-                      {achievement.progress}/{achievement.target}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
+            <Text style={styles.sectionTitle}>🏆 Succès débloqués</Text>
+            {unlockedAchievements.map(achievement => 
+              renderAchievementCard(achievement, true)
+            )}
           </View>
         )}
 
-        {/* Achievements par catégorie */}
+        {/* Next Achievements */}
+        {getNextAchievements().length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🎯 Prochains objectifs</Text>
+            {getNextAchievements().map(achievement => 
+              renderAchievementCard(achievement, false)
+            )}
+          </View>
+        )}
+
+        {/* All Locked Achievements */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Par catégorie</Text>
-          
-          {Object.entries(categoryAchievements).map(([category, categoryAchs]) => {
-            if (categoryAchs.length === 0) return null;
-            
-            const categoryNames = {
-              session: 'Sessions',
-              impact: 'Impact',
-              streak: 'Séries',
-              time: 'Temps'
-            };
-            
-            const categoryIcons = {
-              session: Target,
-              impact: Trophy,
-              streak: Award,
-              time: Clock
-            };
-            
-            const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons];
-            const unlockedInCategory = categoryAchs.filter(a => a.unlocked).length;
-            
-            return (
-              <View key={category} style={styles.categoryContainer}>
-                <View style={styles.categoryHeader}>
-                  <View style={styles.categoryTitleContainer}>
-                    <CategoryIcon size={20} color={colors.primary} />
-                    <Text style={styles.categoryTitle}>
-                      {categoryNames[category as keyof typeof categoryNames]}
-                    </Text>
-                  </View>
-                  <Text style={styles.categoryProgress}>
-                    {unlockedInCategory}/{categoryAchs.length}
-                  </Text>
-                </View>
-                
-                <View style={styles.categoryAchievements}>
-                  {categoryAchs.map((achievement) => (
-                    <AchievementCard
-                      key={achievement.id}
-                      achievement={achievement}
-                    />
-                  ))}
-                </View>
-              </View>
-            );
-          })}
+          <Text style={styles.sectionTitle}>🔒 Tous les succès</Text>
+          {lockedAchievements.map(achievement => 
+            renderAchievementCard(achievement, false)
+          )}
         </View>
 
         {/* Motivation */}
-        <View style={styles.section}>
-          <View style={styles.motivationCard}>
-            <Text style={styles.motivationTitle}>Continue ton parcours ! 🚀</Text>
-            <Text style={styles.motivationText}>
-              Tu as déjà débloqué {unlockedCount} succès. 
-              Chaque session te rapproche de nouveaux objectifs et d'un impact encore plus grand !
-            </Text>
-          </View>
+        <View style={styles.motivationContainer}>
+          <Text style={styles.motivationTitle}>Continue comme ça ! 🌟</Text>
+          <Text style={styles.motivationText}>
+            Chaque session te rapproche de nouveaux succès. 
+            Reste régulier et découvre tous les achievements !
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -188,195 +176,156 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollContent: {
-    paddingBottom: 120,
-  },
   header: {
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    alignItems: "center",
+    padding: 20,
+    paddingBottom: 16,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: 'bold',
     color: colors.text,
     marginBottom: 8,
-    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
     color: colors.textLight,
-    textAlign: "center",
-    marginBottom: 16,
   },
-  progressSummary: {
-    backgroundColor: colors.wellness.lavender,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  progressText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: "600",
-  },
-  quickStatsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 24,
-    gap: 12,
-    marginBottom: 32,
-  },
-  quickStatCard: {
+  content: {
     flex: 1,
-    backgroundColor: colors.card,
+  },
+  
+  // Overview
+  overviewContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    gap: 12,
+  },
+  overviewCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    padding: 20,
     borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
+    alignItems: 'center',
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  quickStatValue: {
-    fontSize: 20,
-    fontWeight: "700",
+  overviewValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
     color: colors.text,
     marginTop: 8,
     marginBottom: 4,
-    letterSpacing: -0.5,
   },
-  quickStatLabel: {
-    fontSize: 11,
+  overviewLabel: {
+    fontSize: 14,
     color: colors.textLight,
-    fontWeight: "500",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
+    textAlign: 'center',
   },
+
+  // Sections
   section: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: '600',
     color: colors.text,
     marginBottom: 16,
-    letterSpacing: -0.3,
   },
-  achievementsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  objectivesContainer: {
-    gap: 12,
-  },
-  objectiveCard: {
-    backgroundColor: colors.card,
+
+  // Achievement Cards
+  achievementCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
+    marginBottom: 12,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    position: 'relative',
   },
-  objectiveHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
+  unlockedCard: {
+    borderWidth: 2,
+    borderColor: colors.success,
   },
-  objectiveIcon: {
-    fontSize: 24,
-    marginRight: 12,
+  lockedCard: {
+    opacity: 0.8,
   },
-  objectiveInfo: {
+  achievementIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  achievementEmoji: {
+    fontSize: 28,
+  },
+  achievementContent: {
     flex: 1,
   },
-  objectiveTitle: {
+  achievementTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 2,
-    letterSpacing: -0.3,
+    fontWeight: '600',
+    marginBottom: 4,
   },
-  objectiveDescription: {
-    fontSize: 12,
+  achievementDescription: {
+    fontSize: 14,
     color: colors.textLight,
+    marginBottom: 8,
   },
-  objectiveProgress: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.primary,
+  progressContainer: {
+    marginTop: 8,
   },
-  objectiveProgressBar: {
+  progressBar: {
     height: 6,
     backgroundColor: colors.border,
     borderRadius: 3,
-    marginBottom: 8,
-    overflow: "hidden",
+    marginBottom: 4,
   },
-  objectiveProgressFill: {
-    height: "100%",
-    backgroundColor: colors.primary,
+  progressFill: {
+    height: '100%',
     borderRadius: 3,
   },
-  objectiveProgressText: {
+  progressText: {
     fontSize: 12,
     color: colors.textLight,
-    textAlign: "center",
-    fontWeight: "500",
+    textAlign: 'right',
   },
-  categoryContainer: {
-    marginBottom: 24,
+  unlockedBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
   },
-  categoryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  categoryTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  categoryTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  categoryProgress: {
-    fontSize: 14,
-    color: colors.textLight,
-    fontWeight: "500",
-  },
-  categoryAchievements: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  motivationCard: {
-    backgroundColor: colors.wellness.cream,
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: colors.wellness.sand,
+
+  // Motivation
+  motivationContainer: {
+    margin: 20,
+    padding: 20,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    alignItems: 'center',
   },
   motivationTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 12,
-    textAlign: "center",
-    letterSpacing: -0.3,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 8,
   },
   motivationText: {
     fontSize: 14,
-    color: colors.textLight,
-    textAlign: "center",
-    lineHeight: 22,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

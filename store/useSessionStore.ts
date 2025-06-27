@@ -51,7 +51,7 @@ interface SessionStore {
 
   // Actions
   startSession: (missionId: string, targetDuration: number) => void;
-  completeSession: () => void;
+  completeSession: (success: boolean) => void;
   failSession: () => void;
   setActiveMission: (missionId: string) => void;
   completeOnboarding: () => void;
@@ -100,6 +100,46 @@ const defaultAchievements: Achievement[] = [
     progress: 0,
     target: 10,
   },
+  {
+    id: 'zen_master',
+    title: 'Maître zen',
+    description: 'Terminer 100 sessions',
+    icon: '🧘‍♂️',
+    progress: 0,
+    target: 100,
+  },
+  {
+    id: 'marathon',
+    title: 'Marathon',
+    description: 'Session de 60 minutes',
+    icon: '⏰',
+    progress: 0,
+    target: 1,
+  },
+  {
+    id: 'ocean_protector',
+    title: 'Protecteur des océans',
+    description: 'Nettoyer 100kg de déchets',
+    icon: '🌊',
+    progress: 0,
+    target: 100,
+  },
+  {
+    id: 'persistent',
+    title: 'Persévérant',
+    description: 'Série de 7 jours',
+    icon: '🔥',
+    progress: 0,
+    target: 7,
+  },
+  {
+    id: 'eco_warrior',
+    title: 'Eco-warrior',
+    description: '1000 points gagnés',
+    icon: '🌍',
+    progress: 0,
+    target: 1000,
+  },
 ];
 
 export const useSessionStore = create<SessionStore>()(
@@ -131,14 +171,13 @@ export const useSessionStore = create<SessionStore>()(
         set({ currentSession: newSession });
       },
 
-      completeSession: () => {
-        const { currentSession, sessions, stats } = get();
+      completeSession: (success: boolean) => {
+        const { currentSession, sessions, stats, achievements } = get();
         
         if (!currentSession) return;
         
         const endTime = Date.now();
         const actualDuration = Math.floor((endTime - currentSession.startTime) / 60000);
-        const success = actualDuration >= currentSession.targetDuration;
         const points = success ? actualDuration * 10 : 0; // 10 points par minute
 
         const completedSession: Session = {
@@ -166,9 +205,63 @@ export const useSessionStore = create<SessionStore>()(
         const newOceanCleaned = success ? stats.oceanCleaned + Math.floor(points / 50) : stats.oceanCleaned;
         const newMaterialsRecycled = success ? stats.materialsRecycled + Math.floor(points / 75) : stats.materialsRecycled;
 
+        // Update achievements
+        const updatedAchievements = achievements.map(achievement => {
+          if (achievement.unlockedAt) return achievement;
+          
+          let newProgress = achievement.progress;
+          let shouldUnlock = false;
+          
+          switch (achievement.id) {
+            case 'first_session':
+              if (success) {
+                newProgress = 1;
+                shouldUnlock = true;
+              }
+              break;
+            case 'weekly_warrior':
+              newProgress = Math.min(stats.totalSessions + (success ? 1 : 0), achievement.target);
+              shouldUnlock = newProgress >= achievement.target;
+              break;
+            case 'tree_planter':
+              newProgress = newTreesPlanted;
+              shouldUnlock = newProgress >= achievement.target;
+              break;
+            case 'zen_master':
+              newProgress = stats.totalSessions + (success ? 1 : 0);
+              shouldUnlock = newProgress >= achievement.target;
+              break;
+            case 'marathon':
+              if (success && actualDuration >= 60) {
+                newProgress = 1;
+                shouldUnlock = true;
+              }
+              break;
+            case 'ocean_protector':
+              newProgress = newOceanCleaned;
+              shouldUnlock = newProgress >= achievement.target;
+              break;
+            case 'persistent':
+              newProgress = newStreak;
+              shouldUnlock = newProgress >= achievement.target;
+              break;
+            case 'eco_warrior':
+              newProgress = stats.totalPoints + points;
+              shouldUnlock = newProgress >= achievement.target;
+              break;
+          }
+          
+          return {
+            ...achievement,
+            progress: newProgress,
+            unlockedAt: shouldUnlock ? Date.now() : achievement.unlockedAt,
+          };
+        });
+
         set({
           currentSession: null,
           sessions: [completedSession, ...sessions],
+          achievements: updatedAchievements,
           stats: {
             ...stats,
             totalSessions: success ? stats.totalSessions + 1 : stats.totalSessions,
