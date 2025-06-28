@@ -37,6 +37,13 @@ export interface Stats {
   materialsRecycled: number;
 }
 
+export interface CurrentSession {
+  id: string;
+  missionId: string;
+  duration: number; // target duration in minutes
+  startTime: number;
+}
+
 interface SessionStore {
   // Core state
   stats: Stats;
@@ -44,6 +51,7 @@ interface SessionStore {
   achievements: Achievement[];
   activeMissionId: string;
   hasCompletedOnboarding: boolean;
+  currentSession: CurrentSession | null;
   
   // UI state
   showSessionResult: boolean;
@@ -55,7 +63,9 @@ interface SessionStore {
   
   // Actions
   setActiveMission: (missionId: string) => void;
-  completeSession: (success: boolean) => void;
+  startSession: (duration: number) => void;
+  completeSession: (success?: boolean) => void;
+  failSession: () => void;
   setShowSessionResult: (show: boolean) => void;
   setNotifications: (enabled: boolean) => void;
   setUserName: (name: string) => void;
@@ -137,6 +147,7 @@ export const useSessionStore = create<SessionStore>()(
       achievements: initialAchievements,
       activeMissionId: 'reforestation',
       hasCompletedOnboarding: false,
+      currentSession: null,
       showSessionResult: false,
       lastSessionSuccess: false,
       notifications: true,
@@ -147,45 +158,71 @@ export const useSessionStore = create<SessionStore>()(
         set({ activeMissionId: missionId });
       },
 
-      completeSession: (success: boolean) => {
+      startSession: (duration: number) => {
         const state = get();
+        const newSession: CurrentSession = {
+          id: `session_${Date.now()}`,
+          missionId: state.activeMissionId,
+          duration,
+          startTime: Date.now(),
+        };
+        set({ currentSession: newSession });
+      },
+
+      completeSession: (success: boolean = true) => {
+        const state = get();
+        if (!state.currentSession) return;
+
         const now = Date.now();
+        const sessionDuration = Math.floor((now - state.currentSession.startTime) / 60000); // minutes
         
         // Create session record
         const newSession: Session = {
-          id: `session_${now}`,
-          missionId: state.activeMissionId,
-          startTime: now - (success ? 1200000 : 300000), // Mock start time
+          id: state.currentSession.id,
+          missionId: state.currentSession.missionId,
+          startTime: state.currentSession.startTime,
           endTime: now,
-          targetDuration: 20, // Mock target
-          actualDuration: success ? 20 : 5, // Mock duration
+          targetDuration: state.currentSession.duration,
+          actualDuration: sessionDuration,
           status: 'completed',
-          points: success ? 200 : 0, // Mock points
+          points: success ? sessionDuration * 10 : 0, // 10 points per minute
         };
 
         // Update stats
         const newStats = { ...state.stats };
         if (success) {
           newStats.totalPoints += newSession.points;
-          newStats.totalMinutes += newSession.actualDuration || 0;
+          newStats.totalMinutes += sessionDuration;
           newStats.totalSessions += 1;
           newStats.currentStreak += 1;
           newStats.longestStreak = Math.max(newStats.longestStreak, newStats.currentStreak);
           
           // Update mission-specific stats
           if (state.activeMissionId === 'reforestation') {
-            newStats.treesPlanted += Math.floor((newSession.actualDuration || 0) / 2);
+            newStats.treesPlanted += Math.floor(sessionDuration / 2);
           } else if (state.activeMissionId === 'ocean') {
-            newStats.oceanCleaned += Math.floor((newSession.actualDuration || 0) / 3);
+            newStats.oceanCleaned += Math.floor(sessionDuration / 3);
           } else if (state.activeMissionId === 'recycling') {
-            newStats.materialsRecycled += Math.floor((newSession.actualDuration || 0) / 2);
+            newStats.materialsRecycled += Math.floor(sessionDuration / 2);
           }
         }
 
         set({
           sessions: [newSession, ...state.sessions],
           stats: newStats,
+          currentSession: null,
           lastSessionSuccess: success,
+          showSessionResult: true,
+        });
+      },
+
+      failSession: () => {
+        const state = get();
+        if (!state.currentSession) return;
+
+        set({
+          currentSession: null,
+          lastSessionSuccess: false,
           showSessionResult: true,
         });
       },
@@ -213,6 +250,7 @@ export const useSessionStore = create<SessionStore>()(
           achievements: initialAchievements,
           activeMissionId: 'reforestation',
           hasCompletedOnboarding: false,
+          currentSession: null,
           showSessionResult: false,
           lastSessionSuccess: false,
           notifications: true,

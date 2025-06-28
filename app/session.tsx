@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View, BackHandler, Platform, Text, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { X, AlertCircle, CheckCircle } from "lucide-react-native";
+import { X, AlertCircle } from "lucide-react-native";
 import { useSessionStore } from "@/store/useSessionStore";
 import { missions } from "@/constants/missions";
 import SessionTimer from "@/components/SessionTimer";
@@ -10,15 +10,21 @@ import SessionResult from "@/components/SessionResult";
 import colors from "@/constants/colors";
 
 export default function SessionScreen() {
-  const { currentSession, completeSession, failSession } = useSessionStore();
-  const [showResult, setShowResult] = useState(false);
-  const [sessionSuccess, setSessionSuccess] = useState(false);
+  const { 
+    currentSession, 
+    completeSession, 
+    failSession,
+    showSessionResult,
+    lastSessionSuccess,
+    setShowSessionResult
+  } = useSessionStore();
+  
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   
   // If no current session, go back to home
   useEffect(() => {
     if (!currentSession) {
-      router.replace("/home");
+      router.replace("/(tabs)");
     }
   }, [currentSession]);
   
@@ -28,7 +34,7 @@ export default function SessionScreen() {
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
         () => {
-          if (!showResult && !showExitConfirm) {
+          if (!showSessionResult && !showExitConfirm) {
             setShowExitConfirm(true);
             return true;
           } else if (showExitConfirm) {
@@ -41,7 +47,7 @@ export default function SessionScreen() {
       
       return () => backHandler.remove();
     }
-  }, [showResult, showExitConfirm]);
+  }, [showSessionResult, showExitConfirm]);
   
   if (!currentSession) {
     return null;
@@ -50,19 +56,16 @@ export default function SessionScreen() {
   const mission = missions.find(m => m.id === currentSession.missionId)!;
   
   const handleSessionComplete = () => {
-    completeSession();
-    setSessionSuccess(true);
-    setShowResult(true);
+    completeSession(true);
   };
   
   const handleSessionExit = () => {
     failSession();
-    setSessionSuccess(false);
-    setShowResult(true);
   };
   
   const handleCloseResult = () => {
-    router.replace("/home");
+    setShowSessionResult(false);
+    router.replace("/(tabs)");
   };
 
   const handleExitPress = () => {
@@ -79,12 +82,12 @@ export default function SessionScreen() {
   
   return (
     <SafeAreaView style={styles.container}>
-      {showResult ? (
+      {showSessionResult ? (
         <SessionResult
           duration={currentSession.duration}
           mission={mission}
           onClose={handleCloseResult}
-          success={sessionSuccess}
+          success={lastSessionSuccess}
         />
       ) : (
         <>
