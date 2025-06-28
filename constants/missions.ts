@@ -51,31 +51,5 @@ export const missions: Mission[] = [
     category: 'environmental',
     difficulty: 'easy',
     estimatedImpact: '2kg recyclés par 10 minutes'
-  },
-  {
-    id: 'education',
-    title: 'Éducation',
-    description: 'Finance l\'éducation dans les pays en développement',
-    longDescription: 'Chaque minute de ton temps permet de financer l\'accès à l\'éducation pour des enfants dans le besoin.',
-    icon: '📚',
-    color: '#F59E0B',
-    pointsPerMinute: 4,
-    impactUnit: 'heures d\'école financées',
-    category: 'social',
-    difficulty: 'medium',
-    estimatedImpact: '1h d\'école par 15 minutes'
-  },
-  {
-    id: 'clean_water',
-    title: 'Eau potable',
-    description: 'Améliore l\'accès à l\'eau potable',
-    longDescription: 'Ton temps de calme contribue à l\'installation de puits et systèmes de purification d\'eau dans les communautés qui en ont besoin.',
-    icon: '💧',
-    color: '#06B6D4',
-    pointsPerMinute: 3.5,
-    impactUnit: 'litres d\'eau purifiée',
-    category: 'social',
-    difficulty: 'hard',
-    estimatedImpact: '50L d\'eau pure par 10 minutes'
   }
 ];
