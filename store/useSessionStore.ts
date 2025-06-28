@@ -56,6 +56,7 @@ interface SessionStore {
   // UI state
   showSessionResult: boolean;
   lastSessionSuccess: boolean;
+  isLoading: boolean;
   
   // Settings
   notifications: boolean;
@@ -73,6 +74,7 @@ interface SessionStore {
   resetStore: () => void;
   updateAchievementProgress: (achievementId: string, progress: number) => void;
   unlockAchievement: (achievementId: string) => void;
+  setLoading: (loading: boolean) => void;
 }
 
 const initialStats: Stats = {
@@ -150,6 +152,7 @@ export const useSessionStore = create<SessionStore>()(
       currentSession: null,
       showSessionResult: false,
       lastSessionSuccess: false,
+      isLoading: true,
       notifications: true,
       userName: 'Eco-Warrior',
 
@@ -277,6 +280,10 @@ export const useSessionStore = create<SessionStore>()(
           ),
         }));
       },
+
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
     }),
     {
       name: 'session-store',
@@ -290,6 +297,12 @@ export const useSessionStore = create<SessionStore>()(
         notifications: state.notifications,
         userName: state.userName,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Set loading to false when rehydration is complete
+        if (state) {
+          state.setLoading(false);
+        }
+      },
     }
   )
 );
