@@ -1,275 +1,152 @@
-import React, { useState, useEffect, useRef } from "react";
-import { StyleSheet, Text, View, Animated, Dimensions } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Mission } from "@/constants/missions";
-import colors from "@/constants/colors";
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Pause, Play, Square } from 'lucide-react-native';
+import colors from '@/constants/colors';
 
-type SessionTimerProps = {
-  duration: number; // in minutes
-  mission: Mission;
+interface SessionTimerProps {
+  duration: number; // en minutes
   onComplete: () => void;
-  onExit: () => void;
-};
+  onCancel: () => void;
+}
 
-const { width, height } = Dimensions.get("window");
-
-export default function SessionTimer({ duration, mission, onComplete, onExit }: SessionTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60); // Convert to seconds
+export default function SessionTimer({ duration, onComplete, onCancel }: SessionTimerProps) {
+  const [timeLeft, setTimeLeft] = useState(duration * 60); // en secondes
   const [isActive, setIsActive] = useState(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Animation values
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    // Fade in animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  useEffect(() => {
-    if (isActive && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          const newTime = prev - 1;
-          
-          // Update progress animation
-          const progress = (duration * 60 - newTime) / (duration * 60);
-          Animated.timing(progressAnim, {
-            toValue: progress,
-            duration: 100,
-            useNativeDriver: false,
-          }).start();
-          
-          if (newTime <= 0) {
-            onComplete();
-            return 0;
-          }
-          
-          return newTime;
-        });
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (isActive && !isPaused && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(timeLeft => timeLeft - 1);
       }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    } else if (timeLeft === 0) {
+      onComplete();
     }
-
+    
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft, duration, onComplete]);
+  }, [isActive, isPaused, timeLeft, onComplete]);
 
-  // Pulse animation for timer
-  useEffect(() => {
-    if (isActive) {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulse.start();
-      return () => pulse.stop();
-    }
-  }, [isActive]);
+  const togglePause = () => {
+    setIsPaused(!isPaused);
+  };
 
-  const formatTime = (seconds: number): string => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getPhaseMessage = (): string => {
-    const elapsed = duration * 60 - timeLeft;
-    const progress = elapsed / (duration * 60);
-    
-    if (progress < 0.25) return "🌱 Respire profondément";
-    if (progress < 0.5) return "🧘‍♂️ Tu es dans le flow";
-    if (progress < 0.75) return "⚡ Concentration maximale";
-    return "🏆 Tu es un champion !";
-  };
-
-  const elapsedMinutes = Math.floor((duration * 60 - timeLeft) / 60);
-  const estimatedPoints = elapsedMinutes * mission.pointsPerMinute;
+  const progress = ((duration * 60 - timeLeft) / (duration * 60)) * 100;
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      {/* Background */}
-      <LinearGradient
-        colors={[mission.color + '40', mission.color + '80', mission.color]}
-        style={styles.backgroundGradient}
-      />
-      
-      {/* Main content */}
-      <View style={styles.content}>
-        {/* Mission info */}
-        <View style={styles.missionInfo}>
-          <Text style={styles.missionTitle}>{mission.title}</Text>
-          <Text style={styles.phaseMessage}>{getPhaseMessage()}</Text>
+    <View style={styles.container}>
+      <View style={styles.timerContainer}>
+        <View style={styles.progressRing}>
+          <View style={[styles.progressFill, { height: `${progress}%` }]} />
         </View>
         
-        {/* Timer circle */}
-        <Animated.View 
-          style={[
-            styles.timerContainer,
-            { transform: [{ scale: pulseAnim }] }
-          ]}
-        >
-          <View style={styles.timerCircle}>
-            {/* Progress ring */}
-            <Animated.View style={styles.progressRing}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  {
-                    transform: [{
-                      rotate: progressAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0deg', '360deg'],
-                      })
-                    }]
-                  }
-                ]}
-              />
-            </Animated.View>
-            
-            {/* Timer text */}
-            <View style={styles.timerTextContainer}>
-              <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-              <Text style={styles.timerLabel}>restantes</Text>
-            </View>
-          </View>
-        </Animated.View>
-        
-        {/* Progress info */}
-        <View style={styles.progressInfo}>
-          <Text style={styles.progressText}>
-            {elapsedMinutes} min écoulées
-          </Text>
-          <Text style={styles.pointsText}>
-            ≈ {estimatedPoints} points gagnés
-          </Text>
-        </View>
-        
-        {/* Motivational quotes */}
-        <View style={styles.motivationContainer}>
-          <Text style={styles.motivationText}>
-            "Chaque minute de calme contribue à un monde meilleur"
-          </Text>
+        <View style={styles.timeDisplay}>
+          <Text style={styles.timeText}>{formatTime(timeLeft)}</Text>
+          <Text style={styles.durationText}>/ {duration} min</Text>
         </View>
       </View>
-    </Animated.View>
+      
+      <View style={styles.controls}>
+        <TouchableOpacity 
+          style={[styles.controlButton, styles.secondaryButton]}
+          onPress={togglePause}
+        >
+          {isPaused ? (
+            <Play size={24} color={colors.primary} />
+          ) : (
+            <Pause size={24} color={colors.primary} />
+          )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.controlButton, styles.dangerButton]}
+          onPress={onCancel}
+        >
+          <Square size={24} color={colors.error} />
+        </TouchableOpacity>
+      </View>
+      
+      <Text style={styles.statusText}>
+        {isPaused ? 'Session en pause' : 'Session en cours...'}
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    width: width,
-    height: height,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    alignItems: 'center',
+    padding: 40,
   },
-  missionInfo: {
+  timerContainer: {
+    position: 'relative',
+    width: 250,
+    height: 250,
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 60,
   },
-  missionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  phaseMessage: {
-    fontSize: 18,
-    color: 'rgba(255,255,255,0.9)',
-    textAlign: 'center',
-  },
-  timerContainer: {
-    marginBottom: 40,
-  },
-  timerCircle: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
   progressRing: {
     position: 'absolute',
-    width: 250,
-    height: 250,
+    width: '100%',
+    height: '100%',
     borderRadius: 125,
+    borderWidth: 8,
+    borderColor: colors.borderLight,
+    overflow: 'hidden',
   },
   progressFill: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    borderWidth: 4,
-    borderColor: 'transparent',
-    borderTopColor: 'white',
-    borderRightColor: 'white',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.primary,
   },
-  timerTextContainer: {
+  timeDisplay: {
     alignItems: 'center',
   },
-  timerText: {
+  timeText: {
     fontSize: 48,
-    fontWeight: '300',
-    color: 'white',
+    fontWeight: '700',
+    color: colors.text,
     marginBottom: 8,
   },
-  timerLabel: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  progressInfo: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  progressText: {
+  durationText: {
     fontSize: 18,
-    color: 'white',
-    marginBottom: 8,
-    fontWeight: '500',
+    color: colors.textLight,
   },
-  pointsText: {
+  controls: {
+    flexDirection: 'row',
+    gap: 20,
+    marginBottom: 30,
+  },
+  controlButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: colors.primary + '20',
+  },
+  dangerButton: {
+    backgroundColor: colors.error + '20',
+  },
+  statusText: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  motivationContainer: {
-    paddingHorizontal: 32,
-  },
-  motivationText: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
+    color: colors.textLight,
     textAlign: 'center',
-    fontStyle: 'italic',
-    lineHeight: 24,
   },
 });

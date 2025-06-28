@@ -5,17 +5,13 @@ import colors from '@/constants/colors';
 interface DurationPickerProps {
   durations: number[];
   selectedDuration: number;
-  onSelectDuration: (duration: number) => void;
+  onSelect: (duration: number) => void;
 }
 
-export default function DurationPicker({
-  durations,
-  selectedDuration,
-  onSelectDuration,
-}: DurationPickerProps) {
+export default function DurationPicker({ durations, selectedDuration, onSelect }: DurationPickerProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Durée de la session</Text>
+      <Text style={styles.title}>Durée de ta session</Text>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -26,16 +22,14 @@ export default function DurationPicker({
             key={duration}
             style={[
               styles.durationButton,
-              selectedDuration === duration && styles.selectedButton,
+              selectedDuration === duration && styles.selectedDuration
             ]}
-            onPress={() => onSelectDuration(duration)}
+            onPress={() => onSelect(duration)}
           >
-            <Text
-              style={[
-                styles.durationText,
-                selectedDuration === duration && styles.selectedText,
-              ]}
-            >
+            <Text style={[
+              styles.durationText,
+              selectedDuration === duration && styles.selectedText
+            ]}>
               {duration}min
             </Text>
           </TouchableOpacity>
@@ -47,9 +41,9 @@ export default function DurationPicker({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginVertical: 20,
   },
-  label: {
+  title: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
@@ -57,26 +51,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scrollContainer: {
-    paddingHorizontal: 4,
-    gap: 8,
+    paddingHorizontal: 20,
   },
   durationButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: colors.wellness.cream,
+    backgroundColor: colors.backgroundLight,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginHorizontal: 6,
     borderWidth: 2,
-    borderColor: 'transparent',
-    minWidth: 60,
-    alignItems: 'center',
+    borderColor: colors.border,
   },
-  selectedButton: {
+  selectedDuration: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
   durationText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '500',
     color: colors.text,
   },
   selectedText: {

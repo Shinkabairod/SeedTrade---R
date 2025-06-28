@@ -192,45 +192,71 @@ export const useSessionStore = create<SessionStore>()(
           targetDuration: state.currentSession.duration,
           actualDuration: sessionDuration,
           status: 'completed',
-          points: success ? sessionDuration * 10 : 0, // 10 points per minute
+          points: success ? sessionDuration * 2 : 0, // 2 points per minute if successful
         };
 
-        // Update stats
-        const newStats = { ...state.stats };
-        if (success) {
-          newStats.totalPoints += newSession.points;
-          newStats.totalMinutes += sessionDuration;
-          newStats.totalSessions += 1;
-          newStats.currentStreak += 1;
-          newStats.longestStreak = Math.max(newStats.longestStreak, newStats.currentStreak);
-          
-          // Update mission-specific stats
-          if (state.activeMissionId === 'reforestation') {
-            newStats.treesPlanted += Math.floor(sessionDuration / 2);
-          } else if (state.activeMissionId === 'ocean') {
-            newStats.oceanCleaned += Math.floor(sessionDuration / 3);
-          } else if (state.activeMissionId === 'recycling') {
-            newStats.materialsRecycled += Math.floor(sessionDuration / 2);
-          }
+        // Calculate streak
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        const lastSessionDate = state.sessions.length > 0 
+          ? new Date(state.sessions[state.sessions.length - 1].startTime).toDateString()
+          : null;
+
+        let newStreak = 1;
+        if (lastSessionDate === today) {
+          newStreak = state.stats.currentStreak; // Same day, keep streak
+        } else if (lastSessionDate === yesterday) {
+          newStreak = state.stats.currentStreak + 1; // Consecutive day
         }
 
+        // Update stats
+        const newStats: Stats = {
+          ...state.stats,
+          totalPoints: state.stats.totalPoints + newSession.points,
+          totalMinutes: state.stats.totalMinutes + sessionDuration,
+          totalSessions: state.stats.totalSessions + 1,
+          currentStreak: newStreak,
+          longestStreak: Math.max(state.stats.longestStreak, newStreak),
+        };
+
         set({
-          sessions: [newSession, ...state.sessions],
+          sessions: [...state.sessions, newSession],
           stats: newStats,
           currentSession: null,
-          lastSessionSuccess: success,
           showSessionResult: true,
+          lastSessionSuccess: success,
         });
+
+        // Update achievements
+        get().updateAchievementProgress('first_session', 1);
+        get().updateAchievementProgress('sessions_100', newStats.totalSessions);
+        get().updateAchievementProgress('streak_7', newStreak);
+        
+        if (sessionDuration >= 60) {
+          get().updateAchievementProgress('marathon_60', 1);
+        }
       },
 
       failSession: () => {
         const state = get();
         if (!state.currentSession) return;
 
+        const newSession: Session = {
+          id: state.currentSession.id,
+          missionId: state.currentSession.missionId,
+          startTime: state.currentSession.startTime,
+          endTime: Date.now(),
+          targetDuration: state.currentSession.duration,
+          actualDuration: 0,
+          status: 'cancelled',
+          points: 0,
+        };
+
         set({
+          sessions: [...state.sessions, newSession],
           currentSession: null,
-          lastSessionSuccess: false,
           showSessionResult: true,
+          lastSessionSuccess: false,
         });
       },
 
@@ -266,41 +292,48 @@ export const useSessionStore = create<SessionStore>()(
       },
 
       updateAchievementProgress: (achievementId: string, progress: number) => {
-        set((state) => ({
-          achievements: state.achievements.map((achievement) =>
-            achievement.id === achievementId
-              ? { ...achievement, progress }
-              : achievement
-          ),
-        }));
+        const state = get();
+        const achievements = state.achievements.map(achievement => {
+          if (achievement.id === achievementId) {
+            const newProgress = Math.min(progress, achievement.target);
+            const wasUnlocked = achievement.progress >= achievement.target;
+            const isNowUnlocked = newProgress >= achievement.target;
+            
+            if (!wasUnlocked && isNowUnlocked) {
+              get().unlockAchievement(achievementId);
+            }
+            
+            return {
+              ...achievement,
+              progress: newProgress,
+            };
+          }
+          return achievement;
+        });
+        
+        set({ achievements });
       },
 
       unlockAchievement: (achievementId: string) => {
-        set((state) => ({
-          achievements: state.achievements.map((achievement) =>
-            achievement.id === achievementId
-              ? { ...achievement, unlockedAt: Date.now() }
-              : achievement
-          ),
-        }));
+        const state = get();
+        const achievements = state.achievements.map(achievement => {
+          if (achievement.id === achievementId && !achievement.unlockedAt) {
+            return {
+              ...achievement,
+              unlockedAt: Date.now(),
+            };
+          }
+          return achievement;
+        });
+        
+        set({ achievements });
       },
     }),
     {
-      name: 'session-store',
+      name: 'seedtrade-session-store',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        stats: state.stats,
-        sessions: state.sessions,
-        achievements: state.achievements,
-        activeMissionId: state.activeMissionId,
-        hasCompletedOnboarding: state.hasCompletedOnboarding,
-        notifications: state.notifications,
-        userName: state.userName,
-      }),
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.setHydrated();
-        }
+        state?.setHydrated();
       },
     }
   )

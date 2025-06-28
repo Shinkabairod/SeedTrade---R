@@ -97,101 +97,42 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleEditName = () => {
-    if (Platform.OS === 'web') {
-      const newName = prompt('Entrez votre nouveau nom :', userName);
-      if (newName && newName.trim()) {
-        setUserName(newName.trim());
-      }
-    } else {
-      Alert.prompt(
-        'Modifier le nom',
-        'Entrez votre nouveau nom :',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { 
-            text: 'Confirmer', 
-            onPress: (newName) => {
-              if (newName && newName.trim()) {
-                setUserName(newName.trim());
-              }
-            }
-          }
-        ],
-        'plain-text',
-        userName
-      );
-    }
-  };
-
   if (showSettings) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom"]}>
-        <View style={styles.settingsHeader}>
+        <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => setShowSettings(false)}
           >
             <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.settingsTitle}>Paramètres</Text>
+          <Text style={styles.headerTitle}>Paramètres</Text>
           <View style={styles.placeholder} />
         </View>
 
-        <ScrollView style={styles.settingsContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.settingsSectionTitle}>Préférences</Text>
           <View style={styles.settingsGroup}>
-            <View style={styles.settingItem}>
+            <TouchableOpacity 
+              style={styles.settingItem} 
+              onPress={() => setNotifications(!notifications)}
+            >
               <View style={styles.settingIconContainer}>
                 <Bell size={20} color={colors.primary} />
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>Notifications</Text>
                 <Text style={styles.settingDescription}>
-                  Rappels de sessions et encouragements
+                  {notifications ? 'Activées' : 'Désactivées'}
                 </Text>
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.toggle,
-                  notifications ? styles.toggleActive : styles.toggleInactive
-                ]}
-                onPress={() => setNotifications(!notifications)}
-              >
-                <View style={[
-                  styles.toggleThumb,
-                  notifications ? styles.toggleThumbActive : styles.toggleThumbInactive
-                ]} />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.settingItem} onPress={handleEditName}>
-              <View style={styles.settingIconContainer}>
-                <User size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Nom d'utilisateur</Text>
-                <Text style={styles.settingDescription}>{userName}</Text>
               </View>
               <ChevronRight size={20} color={colors.textLight} />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.settingsSectionTitle}>Support</Text>
+          <Text style={styles.settingsSectionTitle}>Communauté</Text>
           <View style={styles.settingsGroup}>
-            <TouchableOpacity style={styles.settingItem}>
-              <View style={styles.settingIconContainer}>
-                <HelpCircle size={20} color={colors.secondary} />
-              </View>
-              <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Aide & FAQ</Text>
-                <Text style={styles.settingDescription}>
-                  Questions fréquentes et support
-                </Text>
-              </View>
-              <ChevronRight size={20} color={colors.textLight} />
-            </TouchableOpacity>
-
             <TouchableOpacity style={styles.settingItem} onPress={shareApp}>
               <View style={styles.settingIconContainer}>
                 <Share2 size={20} color={colors.secondary} />
@@ -234,40 +175,31 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileHeader}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profil</Text>
           <TouchableOpacity 
-            style={styles.avatarContainer}
-            onPress={handleEditName}
+            style={styles.settingsButton}
+            onPress={() => setShowSettings(true)}
           >
-            <Text style={styles.avatarText}>{userName.charAt(0).toUpperCase()}</Text>
+            <Settings size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.profileName}>{userName}</Text>
-          <Text style={styles.profileSubtitle}>
-            Niveau {Math.floor(stats.totalPoints / 500) + 1} • {stats.totalPoints} points
-          </Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => setShowSettings(true)}
-            >
-              <Settings size={18} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={shareApp}
-            >
-              <Share2 size={18} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
         </View>
-        
+
+        <View style={styles.profileSection}>
+          <View style={styles.avatarContainer}>
+            <User size={32} color={colors.primary} />
+          </View>
+          <Text style={styles.userName}>{userName}</Text>
+          <Text style={styles.userTitle}>Eco-Warrior</Text>
+        </View>
+
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <View style={styles.statIconContainer}>
               <Clock size={20} color={colors.stats.time} />
             </View>
-            <Text style={styles.statValue}>{stats.totalMinutes}</Text>
-            <Text style={styles.statLabel}>Minutes</Text>
+            <Text style={styles.statValue}>{Math.floor(stats.totalMinutes)}min</Text>
+            <Text style={styles.statLabel}>Temps total</Text>
           </View>
           
           <View style={styles.statCard}>
@@ -298,43 +230,48 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions rapides</Text>
           <View style={styles.quickActionsContainer}>
-            {[
-              { icon: Heart, title: 'Partager SeedTrade', color: 'bg-red-100', action: shareApp },
-              { icon: Globe, title: 'À propos', color: 'bg-blue-100', action: () => Alert.alert('À propos de SeedTrade', 'SeedTrade v1.0.0\n\nTransforme ton temps de calme en impact positif pour la planète.\n\nDéveloppé avec ❤️ pour un monde meilleur.') },
-              { icon: Star, title: 'Noter l\'app', color: 'bg-yellow-100', action: () => Alert.alert('⭐ Merci de nous soutenir !', 'Ton avis compte beaucoup pour nous aider à améliorer SeedTrade.') },
-            ].map((item, index) => {
-              const ItemIcon = item.icon;
-              return (
-                <TouchableOpacity 
-                  key={index}
-                  style={styles.quickActionCard}
-                  onPress={item.action}
-                >
-                  <View style={styles.quickActionIcon}>
-                    <ItemIcon size={20} color={colors.text} />
-                  </View>
-                  <Text style={styles.quickActionTitle}>{item.title}</Text>
-                  <ChevronRight size={16} color={colors.textLight} />
-                </TouchableOpacity>
-              );
-            })}
+            <TouchableOpacity style={styles.quickAction} onPress={shareApp}>
+              <View style={[styles.quickActionIcon, { backgroundColor: '#FEE2E2' }]}>
+                <Heart size={20} color="#EF4444" />
+              </View>
+              <Text style={styles.quickActionTitle}>Partager SeedTrade</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickAction} 
+              onPress={() => Alert.alert('À propos de SeedTrade', 'SeedTrade v1.0.0\n\nTransforme ton temps de calme en impact positif pour la planète.\n\nDéveloppé avec ❤️ pour un monde meilleur.')}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#DBEAFE' }]}>
+                <Globe size={20} color="#3B82F6" />
+              </View>
+              <Text style={styles.quickActionTitle}>À propos</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickAction} 
+              onPress={() => Alert.alert('⭐ Merci de nous soutenir !', 'Ton avis compte beaucoup pour nous aider à améliorer SeedTrade.')}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#FEF3C7' }]}>
+                <Star size={20} color="#F59E0B" />
+              </View>
+              <Text style={styles.quickActionTitle}>Noter l'app</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        
+
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ton impact total</Text>
-          <View style={styles.impactSummaryCard}>
-            <View style={styles.impactGrid}>
-              <View style={styles.impactItem}>
-                <Text style={styles.impactValue}>{stats.treesPlanted}</Text>
-                <Text style={styles.impactLabel}>🌳 Arbres plantés</Text>
-              </View>
-              <View style={styles.impactItem}>
-                <Text style={styles.impactValue}>{stats.oceanCleaned}kg</Text>
-                <Text style={styles.impactLabel}>🌊 Océan nettoyé</Text>
+          <Text style={styles.sectionTitle}>Tes contributions</Text>
+          {missionContributions.map(({ mission, contribution }) => (
+            <View key={mission.id} style={styles.contributionCard}>
+              <Text style={styles.contributionIcon}>{mission.icon}</Text>
+              <View style={styles.contributionContent}>
+                <Text style={styles.contributionTitle}>{mission.title}</Text>
+                <Text style={styles.contributionValue}>
+                  {contribution} {mission.impactUnit}
+                </Text>
               </View>
             </View>
-          </View>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -347,281 +284,198 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 40,
   },
-  profileHeader: {
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    backgroundColor: colors.card,
-    marginBottom: 24,
-    position: "relative",
-  },
-  avatarContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: "700",
-    color: "white",
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  profileSubtitle: {
-    fontSize: 14,
-    color: colors.textLight,
-    fontWeight: "500",
-  },
-  headerActions: {
-    position: "absolute",
-    top: 24,
-    right: 24,
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionButton: {
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: colors.wellness.lavender,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 24,
-    gap: 12,
-    marginBottom: 32,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: "45%",
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: "center",
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.wellness.cream,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: colors.textLight,
-    textAlign: "center",
-    fontWeight: "500",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 16,
-    letterSpacing: -0.3,
-  },
-  quickActionsContainer: {
-    gap: 12,
-  },
-  quickActionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  quickActionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.wellness.cream,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  quickActionTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  impactSummaryCard: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  impactGrid: {
-    flexDirection: "row",
-    gap: 24,
-  },
-  impactItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  impactValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "white",
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  impactLabel: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  // Settings styles
-  settingsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  settingsButton: {
+    padding: 8,
   },
   backButton: {
     padding: 8,
-    borderRadius: 12,
-    backgroundColor: colors.card,
-  },
-  settingsTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: colors.text,
   },
   placeholder: {
     width: 40,
   },
-  settingsContent: {
-    flex: 1,
-    padding: 20,
+  profileSection: {
+    alignItems: 'center',
+    paddingVertical: 32,
   },
-  settingsSectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
+  avatarContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 12,
-    marginTop: 20,
-    letterSpacing: -0.3,
+    marginBottom: 4,
   },
-  settingsGroup: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 20,
+  userTitle: {
+    fontSize: 16,
+    color: colors.textLight,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  statCard: {
+    width: '48%',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
-    shadowRadius: 8,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statIconContainer: {
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: colors.textLight,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  quickAction: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  quickActionIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  quickActionTitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  contributionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  contributionIcon: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  contributionContent: {
+    flex: 1,
+  },
+  contributionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  contributionValue: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  settingsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 24,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  settingsGroup: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
     elevation: 2,
   },
   settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   settingIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  dangerIcon: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: colors.backgroundLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   settingContent: {
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
     color: colors.text,
-    marginBottom: 4,
-  },
-  dangerText: {
-    color: colors.error,
+    marginBottom: 2,
   },
   settingDescription: {
     fontSize: 14,
     color: colors.textLight,
   },
-  toggle: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
-    padding: 2,
-    justifyContent: "center",
+  dangerIcon: {
+    backgroundColor: colors.error + '20',
   },
-  toggleActive: {
-    backgroundColor: colors.primary,
-  },
-  toggleInactive: {
-    backgroundColor: colors.border,
-  },
-  toggleThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "white",
-  },
-  toggleThumbActive: {
-    alignSelf: "flex-end",
-  },
-  toggleThumbInactive: {
-    alignSelf: "flex-start",
+  dangerText: {
+    color: colors.error,
   },
 });
