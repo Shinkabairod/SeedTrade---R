@@ -298,7 +298,9 @@ export const useSessionStore = create<SessionStore>()(
         userName: state.userName,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
+        if (state) {
+          state.setHydrated();
+        }
       },
     }
   )

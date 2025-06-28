@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -31,17 +31,10 @@ export default function HomeScreen() {
     isHydrated
   } = useSessionStore();
   
-  const [selectedDuration, setSelectedDuration] = useState(20);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (isHydrated) {
-      setIsLoading(false);
-    }
-  }, [isHydrated]);
+  const [selectedDuration, setSelectedDuration] = React.useState(20);
 
   // Show loading state while hydrating
-  if (isLoading) {
+  if (!isHydrated) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <View style={styles.loadingContainer}>
