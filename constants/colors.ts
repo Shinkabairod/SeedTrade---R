@@ -6,6 +6,7 @@ export default {
   
   // Background colors
   background: '#FEFEFE',
+  backgroundLight: '#F9FAFB',
   surface: '#FFFFFF',
   card: '#FFFFFF',
   
@@ -25,6 +26,7 @@ export default {
   
   // Status colors
   success: '#10B981',
+  successLight: '#D1FAE5',
   warning: '#F59E0B',
   error: '#EF4444',
   info: '#3B82F6',
@@ -47,5 +49,12 @@ export default {
     time: '#3B82F6',
     streak: '#EF4444',
     sessions: '#8B5CF6',
+  },
+  
+  // Mission colors
+  missions: {
+    reforestation: '#10B981',
+    ocean: '#3B82F6',
+    recycling: '#8B5CF6',
   },
 };
