@@ -70,6 +70,9 @@ export default function TabLayout() {
           ),
         }}
       />
+      
+      {/* Supprimer cette ligne problématique : */}
+      {/* <Tabs.Screen name="session" options={{ href: null }} /> */}
     </Tabs>
   );
 }

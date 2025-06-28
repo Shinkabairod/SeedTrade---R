@@ -1,16 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { 
-  ChevronRight, 
-  Award, 
   User, 
   Settings, 
   Sparkles, 
-  Clock,
   Target,
-  Zap
+  Zap,
+  Clock
 } from "lucide-react-native";
 import { useSessionStore } from "@/store/useSessionStore";
 import { missions } from "@/constants/missions";
@@ -31,7 +29,7 @@ export default function HomeScreen() {
     isHydrated
   } = useSessionStore();
   
-  const [selectedDuration, setSelectedDuration] = React.useState(20);
+  const [selectedDuration, setSelectedDuration] = useState(20);
 
   // Show loading state while hydrating
   if (!isHydrated) {
@@ -100,13 +98,12 @@ export default function HomeScreen() {
                 <DurationPicker
                   durations={DURATIONS}
                   selectedDuration={selectedDuration}
-                  onSelectDuration={setSelectedDuration}
+                  onSelect={setSelectedDuration}
                 />
                 
                 <Button
                   title="Commencer la session"
                   onPress={handleStartSession}
-                  size="large"
                   style={styles.startButton}
                 />
               </>
@@ -118,7 +115,6 @@ export default function HomeScreen() {
                 <Button
                   title="Voir la session"
                   onPress={() => router.push("/session")}
-                  size="large"
                   style={styles.startButton}
                 />
               </View>
@@ -157,62 +153,19 @@ export default function HomeScreen() {
               <View style={styles.quickStatIcon}>
                 <Clock size={20} color={colors.stats.time} />
               </View>
-              <Text style={styles.quickStatValue}>{Math.floor(stats.totalMinutes / 60)}h</Text>
-              <Text style={styles.quickStatLabel}>Temps</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.quickStatCard}
-              onPress={() => router.push("/(tabs)/achievements")}
-            >
-              <View style={styles.quickStatIcon}>
-                <Award size={20} color={colors.stats.sessions} />
-              </View>
-              <Text style={styles.quickStatValue}>{stats.totalSessions}</Text>
-              <Text style={styles.quickStatLabel}>Sessions</Text>
+              <Text style={styles.quickStatValue}>{Math.floor(stats.totalMinutes)}min</Text>
+              <Text style={styles.quickStatLabel}>Temps total</Text>
             </TouchableOpacity>
           </View>
         </View>
-        
+
         <View style={styles.missionSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Mission active</Text>
-            <TouchableOpacity 
-              style={styles.changeMissionButton}
-              onPress={() => router.push("/(tabs)/missions")}
-            >
-              <Text style={styles.changeMissionText}>Changer</Text>
-              <ChevronRight size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          
+          <Text style={styles.sectionTitle}>Ta mission active</Text>
           <MissionCard
             mission={activeMission}
             isActive={true}
-            onPress={() => {}}
+            onSelect={() => router.push("/(tabs)/missions")}
           />
-        </View>
-        
-        <View style={styles.missionSection}>
-          <Text style={styles.sectionTitle}>Découvrir</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-          >
-            {missions
-              .filter(m => m.id !== activeMissionId)
-              .slice(0, 3)
-              .map((mission) => (
-                <View key={mission.id} style={styles.horizontalMissionCard}>
-                  <MissionCard
-                    mission={mission}
-                    isActive={false}
-                    onPress={() => handleSelectMission(mission.id)}
-                  />
-                </View>
-              ))}
-          </ScrollView>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -231,15 +184,15 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    color: colors.textLight,
+    color: colors.text,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingVertical: 20,
-    backgroundColor: colors.background,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   headerLeft: {
     flex: 1,
@@ -247,28 +200,24 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 14,
     color: colors.textLight,
-    marginBottom: 4,
-    fontWeight: "500",
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
     color: colors.text,
-    letterSpacing: -0.5,
   },
   headerIcons: {
     flexDirection: "row",
     gap: 8,
   },
   iconButton: {
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: colors.card,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.backgroundLight,
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollContent: {
     paddingBottom: 120,
@@ -278,7 +227,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   sessionCard: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 28,
     shadowColor: colors.shadowMedium,
@@ -297,7 +246,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: colors.text,
-    letterSpacing: -0.3,
   },
   sessionCardSubtitle: {
     fontSize: 14,
@@ -314,90 +262,51 @@ const styles = StyleSheet.create({
   sessionActiveText: {
     fontSize: 16,
     color: colors.primary,
-    textAlign: 'center',
     marginBottom: 16,
-    fontWeight: '600',
+    textAlign: 'center',
   },
   quickStatsSection: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    marginBottom: 32,
   },
   quickStatsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   quickStatCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: colors.card,
-    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
+    flex: 1,
+    marginHorizontal: 4,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
-    shadowRadius: 8,
+    shadowRadius: 4,
     elevation: 2,
   },
   quickStatIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.wellness.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 8,
   },
   quickStatValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  quickStatLabel: {
-    fontSize: 11,
-    color: colors.textLight,
-    fontWeight: '500',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  missionSection: {
-    paddingBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.text,
-    letterSpacing: -0.3,
+    marginBottom: 4,
   },
-  changeMissionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: colors.wellness.lavender,
-    borderRadius: 12,
+  quickStatLabel: {
+    fontSize: 12,
+    color: colors.textLight,
+    textAlign: "center",
   },
-  changeMissionText: {
-    fontSize: 14,
-    color: colors.primary,
+  missionSection: {
+    paddingHorizontal: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: "600",
-  },
-  horizontalScroll: {
-    paddingLeft: 24,
-    gap: 16,
-  },
-  horizontalMissionCard: {
-    width: 300,
+    color: colors.text,
+    marginBottom: 16,
   },
 });
