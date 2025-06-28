@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -27,12 +27,31 @@ export default function HomeScreen() {
     activeMissionId, 
     setActiveMission, 
     startSession,
-    currentSession
+    currentSession,
+    isHydrated
   } = useSessionStore();
   
   const [selectedDuration, setSelectedDuration] = useState(20);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const activeMission = missions.find(m => m.id === activeMissionId)!;
+  useEffect(() => {
+    if (isHydrated) {
+      setIsLoading(false);
+    }
+  }, [isHydrated]);
+
+  // Show loading state while hydrating
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Chargement...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const activeMission = missions.find(m => m.id === activeMissionId) || missions[0];
   
   const handleStartSession = () => {
     startSession(selectedDuration);
@@ -211,6 +230,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: colors.textLight,
   },
   header: {
     flexDirection: "row",

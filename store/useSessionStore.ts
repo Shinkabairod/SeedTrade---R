@@ -61,6 +61,9 @@ interface SessionStore {
   notifications: boolean;
   userName: string;
   
+  // Loading state
+  isHydrated: boolean;
+  
   // Actions
   setActiveMission: (missionId: string) => void;
   startSession: (duration: number) => void;
@@ -73,6 +76,7 @@ interface SessionStore {
   resetStore: () => void;
   updateAchievementProgress: (achievementId: string, progress: number) => void;
   unlockAchievement: (achievementId: string) => void;
+  setHydrated: () => void;
 }
 
 const initialStats: Stats = {
@@ -152,8 +156,11 @@ export const useSessionStore = create<SessionStore>()(
       lastSessionSuccess: false,
       notifications: true,
       userName: 'Eco-Warrior',
+      isHydrated: false,
 
       // Actions
+      setHydrated: () => set({ isHydrated: true }),
+
       setActiveMission: (missionId: string) => {
         set({ activeMissionId: missionId });
       },
@@ -290,6 +297,9 @@ export const useSessionStore = create<SessionStore>()(
         notifications: state.notifications,
         userName: state.userName,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated();
+      },
     }
   )
 );
